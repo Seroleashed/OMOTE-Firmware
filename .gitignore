@@ -6,3 +6,11 @@
 .vscode/ipch
 src/secrets_override.h
 **/.DS_Store
+
+# Nix / direnv
+.direnv
+result
+
+# PlatformIO core dir inside the project (see flake.nix shellHook)
+.platformio
+compile_commands.json

@@ -1,3 +1,4 @@
+#pragma once
 // This list is copied from 'IRremoteESP8266/src/IRremoteESP8266.h' (except GC, which was added here)
 // We need to copy the list because in the simulator there is no access to the IRremoteESP8266 library.
 // Copying is not dangerous, because entries will never be removed or changed.
