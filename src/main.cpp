@@ -4,6 +4,7 @@
 #include "applicationInternal/omote_log.h"
 // init hardware and hardware loop
 #include "applicationInternal/hardware/hardwarePresenter.h"
+#include "applicationInternal/storage/configStorage.h"
 // register devices and their commands
 //   special
 #include "devices/misc/device_specialCommands.h"
@@ -75,6 +76,11 @@ int main(int argc, char *argv[]) {
   init_sleep();
   // Restore settings from internal flash memory
   init_preferences();
+
+  // File system for the JSON configuration (littlefs on the ESP32, a local
+  // folder in the simulator). Nothing reads from it yet - the modules are
+  // switched over to it step by step.
+  configStorage::setFileSystem(get_configFileSystem());
   // blinking led
   init_userled();
   // startup SD card
