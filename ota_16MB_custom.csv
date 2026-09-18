@@ -1,0 +1,24 @@
+# Partition table for OMOTE hardware revision 5 and higher (16 MB flash).
+#
+# Replaces noota_16MB_custom.csv. Differences:
+#   * two app slots (ota_0 / ota_1) instead of a single 6 MB app  -> OTA updates
+#   * a named littlefs data partition for the JSON configuration
+#   * a coredump partition, so a crash can be analysed afterwards
+#
+# ATTENTION: changing the partition layout needs ONE full erase over USB:
+#   pio run -e esp32-s3-Rev5andHigher -t erase
+#   pio run -e esp32-s3-Rev5andHigher -t upload
+# Everything stored in NVS (brightness, sleep timeout, active scene) is lost
+# once. Afterwards the layout stays stable and OTA updates keep both NVS and
+# the configuration partition untouched.
+#
+# The current firmware needs roughly 2 MB, so 5 MB per slot leaves plenty of
+# room for the web UI, the JSON renderer and future growth.
+#
+# Name,     Type, SubType,  Offset,    Size,      Flags
+nvs,        data, nvs,      0x9000,    0x5000,
+otadata,    data, ota,      0xe000,    0x2000,
+app0,       app,  ota_0,    0x10000,   0x500000,
+app1,       app,  ota_1,    0x510000,  0x500000,
+littlefs,   data, spiffs,   0xA10000,  0x5E0000,
+coredump,   data, coredump, 0xFF0000,  0x10000,
