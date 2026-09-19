@@ -4,6 +4,8 @@
 #include "applicationInternal/omote_log.h"
 // init hardware and hardware loop
 #include "applicationInternal/hardware/hardwarePresenter.h"
+#include "applicationInternal/hardware/firmwareImage.h"
+#include "applicationInternal/firmwareInfo.h"
 #include "applicationInternal/storage/configStorage.h"
 // register devices and their commands
 //   special
@@ -70,6 +72,16 @@ int main(int argc, char *argv[]) {
 
   // --- Startup ---
   Serial.begin(115200);
+  // which image is running? After an OTA this says "pending verify" until the
+  // end of setup() confirms it
+  {
+    FirmwareImageInfo firmwareImage = get_firmwareImageInfo();
+    omote_log_i("OMOTE %s, running from '%s' (%s)%s\r\n",
+                firmwareInfo::versionLine().c_str(),
+                firmwareImage.runningPartition.c_str(),
+                firmwareBootStateToString(firmwareImage.state).c_str(),
+                firmwareImage.otaCapable ? ", OTA capable" : "");
+  }
   // do some general hardware setup, like powering the TFT, I2C, ...
   init_hardware_general();
   // get wakeup reason
@@ -177,6 +189,11 @@ int main(int argc, char *argv[]) {
   #endif
 
   omote_log_i("Setup finished in %lu ms.\r\n", millis());
+
+  // Everything came up: hardware, storage, gui, keypad and WiFi. That is the
+  // self test an update has to pass. Only now the image is confirmed - if we
+  // never get here, the bootloader starts the previous one again.
+  confirm_firmwareIsWorking();
 
   #if defined(WIN32) || defined(__linux__) || defined(__APPLE__)
   // In Windows/Linux there is no loop function that is automatically being called. So we have to do this on our own infinitely here in main()

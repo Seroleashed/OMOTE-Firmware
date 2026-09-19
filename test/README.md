@@ -22,6 +22,7 @@ pio test -e native_test -v         # with output of every assertion
 | `test/test_config_storage/` | Crash safe storage: atomic save, backup rotation, crc, power loss. |
 | `test/test_config_model/` | JSON schema v1: round trip, validation of foreign files, export of the compiled-in configuration. |
 | `test/test_command_snapshot/` | Snapshot of every registered command. The safety net for the whole rework. |
+| `test/test_firmware_info/` | Firmware version and the conversion of the compiler's build date. |
 
 Files in the root of `test/` are shared by every test folder, which is why the
 fakes live there.

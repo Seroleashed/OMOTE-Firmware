@@ -1,5 +1,7 @@
 #include <lvgl.h>
 #include "applicationInternal/hardware/hardwarePresenter.h"
+#include "applicationInternal/hardware/firmwareImage.h"
+#include "applicationInternal/firmwareInfo.h"
 #include "applicationInternal/memoryUsage.h"
 #include "applicationInternal/gui/guiBase.h"
 #include "applicationInternal/gui/guiRegistry.h"
@@ -274,6 +276,28 @@ void create_tab_content_settings(lv_obj_t* tab) {
   } else {
     // lv_obj_clear_state(memoryUsageToggle, LV_STATE_CHECKED);
   }
+
+  // Firmware ---------------------------------------------------------------------------------
+  // Which image is running. Without this there is no way to tell after an update
+  // whether the new firmware took effect or whether it was rolled back.
+  menuLabel = lv_label_create(tab);
+  lv_label_set_text(menuLabel, "Firmware");
+  menuBox = lv_obj_create(tab);
+  lv_obj_set_size(menuBox, lv_pct(100), 77);
+  lv_obj_set_style_bg_color(menuBox, color_primary, LV_PART_MAIN);
+  lv_obj_set_style_border_width(menuBox, 0, LV_PART_MAIN);
+
+  FirmwareImageInfo firmwareImage = get_firmwareImageInfo();
+  menuLabel = lv_label_create(menuBox);
+  lv_label_set_text(menuLabel, ("Version: " + firmwareInfo::version()).c_str());
+  lv_obj_align(menuLabel, LV_ALIGN_TOP_LEFT, 0, 0);
+  menuLabel = lv_label_create(menuBox);
+  lv_label_set_text(menuLabel, ("Built:   " + firmwareInfo::buildDate()).c_str());
+  lv_obj_align(menuLabel, LV_ALIGN_TOP_LEFT, 0, 24);
+  menuLabel = lv_label_create(menuBox);
+  lv_label_set_text(menuLabel, ("Image:   " + firmwareImage.runningPartition + " (" +
+                                firmwareBootStateToString(firmwareImage.state) + ")").c_str());
+  lv_obj_align(menuLabel, LV_ALIGN_TOP_LEFT, 0, 48);
 }
 
 void notify_tab_before_delete_settings(void) {
