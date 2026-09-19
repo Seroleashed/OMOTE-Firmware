@@ -47,11 +47,30 @@ Regeln:
 
 Aktuelle Branches siehe Spalte „Branch" in der Statusübersicht.
 
-### Speicherbudget (Messwerte eintragen)
+### Speicherbudget
 
-| Schritt | Flash (Rev5) | RAM statisch | freier Heap nach Boot | größter Block |
+Gemessen mit `pio run`, Angaben in Bytes. Rev5 wechselt mit Schritt 3 von
+`noota_16MB_custom.csv` (12,5 MB App-Slot) auf `ota_16MB_custom.csv` (5 MB), deshalb
+springt die Prozentzahl dort, obwohl die Firmware kaum wächst.
+
+| Stand | Rev1–4 Flash | Rev1–4 RAM | Rev5 Flash | Rev5 RAM |
 |---|---|---|---|---|
-| Basis `f19ad63` | | | | |
+| `main` f19ad63 (Basis) | 1.934.785 (61,5 %) | 100.900 | 1.833.417 (14,0 %) | 63.608 |
+| `feature/01` Phase 0 | 1.979.317 (62,9 %) | 100.988 | 1.875.953 (35,8 %) | 63.712 |
+| `feature/02` Snapshot | unverändert (nur Tests) | | | |
+| `feature/03` OTA/Version | 1.983.381 (63,0 %) | 100.988 | 1.880.233 (35,9 %) | 63.712 |
+| `feature/04` Safe-Mode | 1.985.593 (63,1 %) | 101.012 | 1.882.361 (35,9 %) | 63.736 |
+
+**Phase 0 kostet insgesamt rund 49 KB Flash und 130 Byte statisches RAM** — im
+Wesentlichen ArduinoJson, `configStorage` und LittleFS. Der 5-MB-App-Slot ist zu
+35,9 % gefüllt, es bleiben 3,3 MB für Web-UI, JSON-Renderer und WASM-Vorschau.
+
+Rev1–4 liegt bei 63,1 % von `huge_app.csv` (3 MB) — noch entspannt, aber das ist die
+Zahl, die ab Phase 4 zuerst anschlägt. Siehe Querschnittsregel zu Rev1–4.
+
+Noch offen: freier Heap nach Boot und größter zusammenhängender Block. Beides ist nur
+auf echter Hardware messbar (`get_heapUsage()` ist da, der Settings-Screen zeigt es mit
+eingeschaltetem „Show mem usage").
 
 ---
 
@@ -59,15 +78,15 @@ Aktuelle Branches siehe Spalte „Branch" in der Statusübersicht.
 
 | # | Schritt | Phase | Status | Branch |
 |---|---|---|---|---|
-| 1 | Test-Environment und CI | 0 | 🟡 implementiert, ungetestet | `feature/01-phase0-foundation` |
-| 2 | Erste Tests gegen bestehende Logik | 0 | 🟡 implementiert, ungetestet | `feature/01` + `feature/02-command-snapshot` |
-| 3 | Neue Partitionstabelle | 0 | 🟡 implementiert, ungetestet | `feature/01-phase0-foundation` |
-| 3b | Rollback-Absicherung, Versionsanzeige | 0 | 🟡 implementiert, ungetestet | `feature/03-ota-rollback-and-version` |
-| 4 | Storage-Layer | 0 | 🟡 implementiert, ungetestet | `feature/01-phase0-foundation` |
-| 4b | Safe-Mode | 0 | 🟡 implementiert, ungetestet | `feature/04-safe-mode` |
-| 5 | Referenzen über stabile Namen | 1 | 🟡 implementiert, ungetestet | `feature/01-phase0-foundation` |
-| 6 | Schema und Dateiaufteilung | 1 | 🟡 nur Device-Pack v1 | `feature/01-phase0-foundation` |
-| 7 | Export des einkompilierten Zustands | 1 | 🟡 nur C++-Seite, kein Serial/Python | `feature/01-phase0-foundation` |
+| 1 | Test-Environment und CI | 0 | ✅ getestet | `feature/01-phase0-foundation` |
+| 2 | Erste Tests gegen bestehende Logik | 0 | ✅ getestet | `feature/01` + `feature/02-command-snapshot` |
+| 3 | Neue Partitionstabelle | 0 | ✅ getestet | `feature/01-phase0-foundation` |
+| 3b | Rollback-Absicherung, Versionsanzeige | 0 | ✅ getestet | `feature/03-ota-rollback-and-version` |
+| 4 | Storage-Layer | 0 | ✅ getestet | `feature/01-phase0-foundation` |
+| 4b | Safe-Mode | 0 | ✅ getestet | `feature/04-safe-mode` |
+| 5 | Referenzen über stabile Namen | 1 | ✅ getestet | `feature/01-phase0-foundation` |
+| 6 | Schema und Dateiaufteilung | 1 | 🟡 getestet, nur Device-Pack v1 | `feature/01-phase0-foundation` |
+| 7 | Export des einkompilierten Zustands | 1 | 🟡 getestet, nur C++-Seite | `feature/01-phase0-foundation` |
 | 8 | Geräte und Befehle aus JSON registrieren | 1 | ⬜ offen | |
 | 9 | Sequenz-Engine für Szenen | 1 | ⬜ offen | |
 | 10 | Zugangsdaten im NVS | 1 | ⬜ offen | |
@@ -90,12 +109,17 @@ Aktuelle Branches siehe Spalte „Branch" in der Statusübersicht.
 | 27 | OTA | 5 | ⬜ offen | |
 | 28 | Härtung und Doku | 6 | ⬜ offen | |
 
-Legende: ⬜ offen · 🟡 implementiert, aber noch nicht kompiliert/getestet · ✅ auf `main`
+Legende: ⬜ offen · 🟡 teilweise · ✅ Tests und alle Builds grün
 
-> **Wichtig:** Alles mit 🟡 ist geschrieben, aber noch **nie durch einen Compiler
-> gelaufen**. Die Entwicklungsumgebung war beim Schreiben nicht verfügbar. Erster
-> lokaler Lauf pro Branch: `pio test -e native_test`, dann `pio run` für alle
-> Environments. Erst danach wird gemergt.
+> **Stand der Prüfung:** `pio test -e native_test` (85 Fälle) und `pio run` für
+> `esp32-Rev1toRev4`, `esp32-s3-Rev5andHigher`, beide Testboard-Environments und
+> `linux_64bit` laufen auf jedem der vier Branches durch.
+>
+> **Was das nicht abdeckt:** alles, was echte Hardware braucht. Konkret offen —
+> Versionsanzeige und `Image: app0 (valid)` im Settings-Screen nach dem Flashen
+> (Schritt 3b), Safe-Mode nach drei abgewürgten Starts (Schritt 4b), LittleFS-Mount
+> und Formatierung beim ersten Boot (Schritt 4), sowie freier Heap nach Boot für die
+> Budget-Tabelle. Vor dem ersten Flashen: `pio run -e esp32-s3-Rev5andHigher -t erase`.
 
 ---
 
@@ -178,6 +202,25 @@ Diese sind unten in die jeweiligen Schritte als Checklistenpunkte eingearbeitet:
    Toolchain-Download) — Plan hier bewusst angepasst.
 8. **`noota_16MB_custom.csv`** bleibt als auskommentierte Referenz liegen.
    Aufräumen in Schritt 28.
+
+### Beim ersten Compilerlauf gefunden (behoben)
+
+9. **`omote_log.h` stand nicht für sich allein.** Die Makros expandieren zu
+   `Serial.printf()` und `millis()`, ohne die dafür nötigen Deklarationen selbst
+   einzubinden — das ging bisher nur gut, weil jeder Nutzer vorher
+   `hardwarePresenter.h` inkludiert hatte. `configStorage.cpp` und `configModel.cpp`
+   tun das nicht, **alle drei Firmware-Builds brachen ab**.
+   Bemerkenswert ist, *warum* es durchrutschte: bei `OMOTE_LOG_LEVEL_NONE` expandieren
+   die Makros zu `do {} while(0)` und referenzieren gar nichts. `env:native_test`
+   benutzt genau dieses Level — 61 Tests grün, Firmware unkompilierbar.
+   **Lehre für die weiteren Schritte: `pio test` allein beweist nichts.** Jeder Branch
+   braucht zusätzlich `pio run` über alle Environments.
+   → behoben in `feature/01`, `omote_log.h` inkludiert jetzt `arduinoLayer.h`.
+10. **`linux_64bit` baut auf NixOS nicht** — auch auf unverändertem `main` nicht, also
+    kein Problem dieses Umbaus. `SDL_image.h` macht intern ein schlichtes
+    `#include "SDL.h"`, der Nix-Compiler-Wrapper legt aber nur `…/include` auf den
+    Pfad, nicht `…/include/SDL2`. → behoben im `shellHook` des flakes über
+    `pkg-config`; `platformio.ini` bleibt unangetastet und damit portabel.
 
 ---
 
@@ -575,26 +618,24 @@ Alltagsgewinn.
 
 ## Nächster konkreter Schritt
 
-Phase 0 ist inhaltlich fertig implementiert, aber **noch nie kompiliert**. Reihenfolge
-für den ersten Durchlauf mit fertiger Entwicklungsumgebung:
+Phase 0 ist implementiert, Tests und Builds sind auf allen vier Branches grün.
+Was jetzt noch fehlt, geht nur mit der Fernbedienung in der Hand:
 
-1. `git checkout feature/01-phase0-foundation`
-   `pio test -e native_test` → erwartet **61 Tests grün**.
-   `pio run` für alle vier Firmware-Environments.
-   Speicherwerte in die Budget-Tabelle eintragen. Dann `main` mergen.
-2. `git checkout feature/02-command-snapshot`
-   Erster Lauf **schlägt absichtlich fehl** und legt
-   `test/test_command_snapshot/commands.snapshot.txt` an. Datei durchsehen
-   (sind alle erwarteten Geräte drin?), committen, erneut laufen lassen → grün.
-   Danach mergen.
-3. `git checkout feature/03-ota-rollback-and-version`
-   Testlauf, dann auf echter Hardware flashen: Serial-Log muss
-   `OMOTE 0.9.0-dev (…), running from 'app0'` zeigen, Settings-Screen die
-   Firmware-Box. **Achtung: hier ist das einmalige `pio run -t erase` fällig**,
-   weil Branch 01 die Partitionstabelle wechselt.
-4. `git checkout feature/04-safe-mode`
-   Testlauf. Auf dem Gerät: Schalter „Safe mode next start" umlegen, neu starten,
-   Settings-Screen muss `Config: safe mode (requested)` zeigen.
-5. Erst danach Phase 1 fortsetzen: Schritt 6 (restliche Schemadateien +
+1. **Einmalig löschen und flashen.** Branch 01 wechselt die Partitionstabelle:
+   ```bash
+   pio run -e esp32-s3-Rev5andHigher -t erase
+   pio run -e esp32-s3-Rev5andHigher -t upload
+   ```
+   Danach bleibt das Layout stabil, OTA und Konfiguration überleben jedes Update.
+2. **Schritt 4 auf dem Gerät:** Bootet es sauber? Im Log muss LittleFS beim ersten
+   Start formatiert und gemountet werden (`configFileSystem: littlefs mounted`).
+3. **Schritt 3b:** Serial-Log zeigt `OMOTE 0.9.0-dev (…), running from 'app0'
+   (valid), OTA capable`; im Settings-Screen steht die Firmware-Box.
+4. **Schritt 4b:** Schalter „Safe mode next start" umlegen, neu starten →
+   `Config: safe mode (requested)`. Gegenprobe: das Gerät dreimal während des Starts
+   vom Strom nehmen, der vierte Start muss `safe mode (repeated crash)` melden.
+5. **Budget-Tabelle vervollständigen:** freier Heap nach Boot und größter Block,
+   abzulesen über „Show mem usage" im Settings-Screen.
+6. Erst danach Phase 1 fortsetzen: Schritt 6 (restliche Schemadateien +
    Feature-Flags), dann Schritt 7 (Serial-Dump + Python-Werkzeug), dann Schritt 8
    (JSON-Registrierung, erster Konsument von `bootGuard::isSafeMode()`).
