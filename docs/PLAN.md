@@ -60,6 +60,7 @@ springt die Prozentzahl dort, obwohl die Firmware kaum wächst.
 | `feature/02` Snapshot | unverändert (nur Tests) | | | |
 | `feature/03` OTA/Version | 1.983.381 (63,0 %) | 100.988 | 1.880.233 (35,9 %) | 63.712 |
 | `feature/04` Safe-Mode | 1.985.593 (63,1 %) | 101.012 | 1.882.361 (35,9 %) | 63.736 |
+| `feature/05` system.json | 1.986.305 (63,1 %) | 101.012 | 1.883.073 (35,9 %) | 63.736 |
 
 **Phase 0 kostet insgesamt rund 49 KB Flash und 130 Byte statisches RAM** — im
 Wesentlichen ArduinoJson, `configStorage` und LittleFS. Der 5-MB-App-Slot ist zu
@@ -85,7 +86,7 @@ eingeschaltetem „Show mem usage").
 | 4 | Storage-Layer | 0 | ✅ getestet | `feature/01-phase0-foundation` |
 | 4b | Safe-Mode | 0 | ✅ getestet | `feature/04-safe-mode` |
 | 5 | Referenzen über stabile Namen | 1 | ✅ getestet | `feature/01-phase0-foundation` |
-| 6 | Schema und Dateiaufteilung | 1 | 🟡 getestet, nur Device-Pack v1 | `feature/01-phase0-foundation` |
+| 6 | Schema und Dateiaufteilung | 1 | 🟡 system+devices fertig, scenes+keys offen | `feature/05-config-files-and-flags` |
 | 7 | Export des einkompilierten Zustands | 1 | 🟡 getestet, nur C++-Seite | `feature/01-phase0-foundation` |
 | 8 | Geräte und Befehle aus JSON registrieren | 1 | ⬜ offen | |
 | 9 | Sequenz-Engine für Szenen | 1 | ⬜ offen | |
@@ -111,15 +112,27 @@ eingeschaltetem „Show mem usage").
 
 Legende: ⬜ offen · 🟡 teilweise · ✅ Tests und alle Builds grün
 
-> **Stand der Prüfung:** `pio test -e native_test` (85 Fälle) und `pio run` für
+> **Stand der Prüfung:** `pio test -e native_test` (102 Fälle) und `pio run` für
 > `esp32-Rev1toRev4`, `esp32-s3-Rev5andHigher`, beide Testboard-Environments und
-> `linux_64bit` laufen auf jedem der vier Branches durch.
+> `linux_64bit` laufen auf jedem Branch durch.
 >
-> **Was das nicht abdeckt:** alles, was echte Hardware braucht. Konkret offen —
-> Versionsanzeige und `Image: app0 (valid)` im Settings-Screen nach dem Flashen
-> (Schritt 3b), Safe-Mode nach drei abgewürgten Starts (Schritt 4b), LittleFS-Mount
-> und Formatierung beim ersten Boot (Schritt 4), sowie freier Heap nach Boot für die
-> Budget-Tabelle. Vor dem ersten Flashen: `pio run -e esp32-s3-Rev5andHigher -t erase`.
+> **Was das nicht abdeckt:** alles, was echte Hardware braucht. Es liegt noch keine
+> Fernbedienung vor, die Hardware-Prüfungen sammeln sich also an — das ist eine
+> bewusste Entscheidung, aber die Liste wächst mit jedem Schritt und sollte nicht
+> stillschweigend länger werden:
+>
+> | Schritt | offen auf Hardware |
+> |---|---|
+> | 3 | Bootet die neue Partitionstabelle? Einmalig `-t erase` nötig |
+> | 4 | LittleFS mounten und beim ersten Start formatieren |
+> | 3b | `Image: app0 (valid)` im Settings-Screen, `mark_app_valid` |
+> | 4b | Safe-Mode nach drei abgewürgten Starts |
+> | — | freier Heap nach Boot, größter Block (Budget-Tabelle) |
+>
+> **Ersatz, solange keine Hardware da ist:** `linux_64bit` ist der einzige Build, der
+> das Zusammenspiel wirklich ausführt — `configFileSystem_hal_pc` schreibt nach
+> `./omote_data/`, `bootCounter_hal_pc` legt dort seinen Zähler ab. Ab Schritt 8
+> sollte jeder Branch zusätzlich im Simulator gestartet werden, nicht nur kompiliert.
 
 ---
 
@@ -326,22 +339,42 @@ Referenz in Dateien unbrauchbar — sie verschieben sich, sobald ein Gerät dazu
 
 **Ziel:** Aufteilung statt einer Monsterdatei, weil das Teil-Import und -Export erst ermöglicht.
 
-- [ ] `/cfg/system.json` — Gerätename, Sleep, Helligkeit, MQTT-Broker, Feature-Flags
-- [ ] `/cfg/devices/<id>.json` — ein Gerät mit allen Befehlen; zugleich das Austauschformat 🟡 *(v1 vorhanden)*
-- [ ] `/cfg/scenes.json`
-- [ ] `/cfg/ui.json`
-- [ ] `/cfg/keys.json`
-- [ ] WLAN- und MQTT-Zugangsdaten **nicht** in JSON auf dem Dateisystem, sondern im NVS
-      (Export nur, wenn explizit angehakt) → Schritt 10
-- [ ] Jede Datei mit `schemaVersion` **und** Migrationsfunktion
-- [ ] Tests je Dateityp: Round-Trip, fehlende Felder, defektes JSON, unbekannte Felder
-      (werden bewusst ignoriert), zu große Dateien
-- [ ] **Entscheidung festhalten:** Envelope (Header vor dem JSON) ist reines
-      Speicherformat. Transport (Schritt 11) und HTTP-API (Schritt 18) übertragen immer
-      die nackte Payload; die Hülle wird beim Schreiben auf dem Gerät neu gebildet.
-      Dokumentieren in `configStorage.h` und im Transport-Protokoll.
-- [ ] **Feature-Flags einführen:** `ENABLE_JSON_CONFIG`, `ENABLE_WEB_CONFIG`, `ENABLE_OTA`
-      in `platformio.ini`, default `0`
+Aufgeteilt auf zwei Branches, weil vier Dateiformate in einem PR niemand mehr
+sinnvoll durchsieht:
+
+**`feature/05-config-files-and-flags` — erledigt**
+
+- [x] Gemeinsamer Rahmen `configFile`: Pfade, Typ-Strings, `schemaVersion` + `type`
+      für alle Dateien, mit Fehlermeldungen, die beide Typen benennen
+- [x] `/cfg/devices/<id>.json` — ein Gerät mit allen Befehlen; zugleich das Austauschformat
+- [x] `/cfg/system.json` — Gerätename, Sleep, Helligkeit, MQTT-Broker
+- [x] WLAN- und MQTT-Zugangsdaten **nicht** in der Datei (Test beweist es) → NVS in Schritt 10
+- [x] Fehlendes Feld behält den übergebenen Wert; Feld mit falschem Typ wird ignoriert
+      statt genullt (sonst schwarzes Display nach einem Tippfehler)
+- [x] **Entscheidung festgehalten** in `configFile.h`: der `configStorage`-Envelope
+      (Magic, Länge, CRC) ist reines Speicherformat. Transport (Schritt 11) und
+      HTTP-API (Schritt 18) übertragen immer die nackte Payload; die Hülle wird beim
+      Schreiben auf dem Gerät neu gebildet. Eine vom Gerät gezogene Datei ist damit
+      gültiges JSON, das jeder Editor öffnet.
+- [x] **Feature-Flags:** `ENABLE_JSON_CONFIG`, `ENABLE_WEB_CONFIG`, `ENABLE_OTA`,
+      alle auf `0`
+- [x] 17 Tests (Round-Trip, Teildatei, falscher Typ, fremder Dateityp, neuere Version,
+      keine Zugangsdaten im Export)
+
+**`feature/06-scenes-and-keys` — offen**
+
+- [ ] `/cfg/scenes.json` — Name, `key_repeatModes`, `key_commands_short`,
+      `key_commands_long`, Start-/End-Sequenz, `gui_list`, Aktivierungsbefehl
+- [ ] `/cfg/keys.json` — die 5×5-Matrix; heute sind die 24 `KEY_*` einzelne `char`
+      (`KEY_OK = 'k'`), die Datei braucht stabile Namen statt Zeichen
+- [ ] `/cfg/ui.json` — **bewusst auf Schritt 15 verschoben.** Der Inhalt ist der
+      Widget-Satz des Renderers; ihn jetzt zu erfinden hieße, ihn zweimal zu bauen.
+      Typ und Pfad sind in `configFile.h` schon reserviert.
+- [ ] Migrationsfunktion je Datei: der Mechanismus steht (`parseAndCheckEnvelope`
+      reicht die gefundene Version an den Parser durch), die erste echte Migration
+      kommt mit der ersten Schemaänderung. Kein Vorrat auf Verdacht.
+- [ ] Test „zu große Datei" — sinnvoll erst mit einem Größenlimit, das aus dem
+      Transport (Schritt 11) kommt
 
 ## Schritt 7 — Export des einkompilierten Zustands 🟡
 
