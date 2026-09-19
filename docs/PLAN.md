@@ -62,6 +62,13 @@ springt die Prozentzahl dort, obwohl die Firmware kaum wächst.
 | `feature/04` Safe-Mode | 1.985.593 (63,1 %) | 101.012 | 1.882.361 (35,9 %) | 63.736 |
 | `feature/05` system.json | 1.986.305 (63,1 %) | 101.012 | 1.883.073 (35,9 %) | 63.736 |
 | `feature/06` scenes+keys | 1.987.941 (63,2 %) | 101.012 | 1.884.713 (35,9 %) | 63.736 |
+| `feature/07` Export | 2.008.613 (63,9 %) | 101.052 | 1.905.317 (36,3 %) | 63.760 |
+
+⚠️ Schritt 7 kostet **20,6 KB Flash** — der größte Sprung seit Phase 0. Grund ist der
+Serial-Dump im Settings-Screen: er zieht `configExport` samt Serialisierung aller vier
+Dateitypen in die Firmware. Sobald Schritt 18 die HTTP-API bringt, braucht die Firmware
+das ohnehin. Falls Rev1–4 eng wird, ist dieser Button der erste Kandidat für
+`#if (ENABLE_JSON_CONFIG == 1)`.
 
 **Phase 0 kostet insgesamt rund 49 KB Flash und 130 Byte statisches RAM** — im
 Wesentlichen ArduinoJson, `configStorage` und LittleFS. Der 5-MB-App-Slot ist zu
@@ -88,7 +95,7 @@ eingeschaltetem „Show mem usage").
 | 4b | Safe-Mode | 0 | ✅ getestet | `feature/04-safe-mode` |
 | 5 | Referenzen über stabile Namen | 1 | ✅ getestet | `feature/01-phase0-foundation` |
 | 6 | Schema und Dateiaufteilung | 1 | ✅ getestet (ui.json → Schritt 15) | `feature/05` + `feature/06-scenes-and-keys` |
-| 7 | Export des einkompilierten Zustands | 1 | 🟡 getestet, nur C++-Seite | `feature/01-phase0-foundation` |
+| 7 | Export des einkompilierten Zustands | 1 | ✅ getestet | `feature/07-config-export` |
 | 8 | Geräte und Befehle aus JSON registrieren | 1 | ⬜ offen | |
 | 9 | Sequenz-Engine für Szenen | 1 | ⬜ offen | |
 | 10 | Zugangsdaten im NVS | 1 | ⬜ offen | |
@@ -113,7 +120,7 @@ eingeschaltetem „Show mem usage").
 
 Legende: ⬜ offen · 🟡 teilweise · ✅ Tests und alle Builds grün
 
-> **Stand der Prüfung:** `pio test -e native_test` (127 Fälle) und `pio run` für
+> **Stand der Prüfung:** `pio test -e native_test` (140 Fälle) und `pio run` für
 > `esp32-Rev1toRev4`, `esp32-s3-Rev5andHigher`, beide Testboard-Environments und
 > `linux_64bit` laufen auf jedem Branch durch.
 >
@@ -393,19 +400,47 @@ sinnvoll durchsieht:
   Verdacht.
 - Test „zu große Datei" → sinnvoll erst mit einem Größenlimit aus Schritt 11.
 
-## Schritt 7 — Export des einkompilierten Zustands 🟡
+## Schritt 7 — Export des einkompilierten Zustands ✅
 
 **Ziel:** Sofort realistische Testdaten und das Werkzeug, um `devices_pool` zu konvertieren.
 
-- [ ] `devicePackFromRegisteredCommands()` — Gerätepaket aus den registrierten Befehlen,
-      optional nach Namenspräfix gefiltert 🟡 *(vorhanden)*
-- [ ] **Offen:** `dumpConfigAsJson()` über Serial aufrufbar (Geräte, Szenen, Tastenbelegungen)
-- [ ] **Offen:** Python-Skript (mit `uv`) validiert die Ausgabe gegen ein JSON-Schema
-- [ ] **Offen:** `schema/devicePack.schema.json` und die weiteren Schemadateien einchecken
-- [ ] **Offen:** Skript wandelt den kompletten `src/devices_pool/` (aktuell 9 Geräte:
-      boseAmp, denonAvr, lgsoundbar, lgbluray, samsungbluray, shield, airconditioner,
-      lgTV, sonyTV) in eine mitgelieferte Gerätebibliothek unter `devices_library/` um
-- [ ] Round-Trip-Test: Export → JSON → Import ergibt identische Befehlsliste
+- [x] `devicePackFromRegisteredCommands()` — Gerätepaket aus den registrierten Befehlen,
+      nach Namenspräfix gefiltert
+- [x] `configExport::scenes()` und `::keys()` aus den Live-Registries
+- [x] `get_keypadMatrix()` über die Hardware-Fassade — sonst bräuchte der Export eine
+      zweite Kopie des Layouts, die von der ersten wegdriftet
+- [x] `dumpConfigAsJson()` über Serial, Button im Settings-Screen. BEGIN/END-Marker
+      pro Datei, damit ein Host-Skript die Dateien aus einem Serial-Log schneiden kann
+- [x] `schema/` mit vier JSON-Schemas
+- [x] `tools/validate_config.py` (uv, jsonschema) wählt das Schema am `type`-Feld
+- [x] `[env:config_export]` — natives Werkzeug, registriert den kompletten
+      `devices_pool` und schreibt `devices_library/*.json`. Liest jede Datei vor dem
+      Schreiben wieder ein: eine Datei, die der Exporter selbst nicht parsen kann,
+      gibt man niemandem
+- [x] **12 Geräte, 235 Befehle** in `devices_library/`, alle gegen das Schema validiert
+- [x] CI prüft Schema-Validität **und** dass die Bibliothek aktuell ist
+- [x] Round-Trip-Tests: Gerät, Szene und Matrix je Export → JSON → Import
+
+**Was der Export in den bestehenden Quellen gefunden hat:**
+
+1. **`device_denonAvr` registriert nichts.** Alle 41 `register_command()`-Zeilen sind
+   auskommentiert. Das Gerät ist im Pool, aber leer — bewusst nicht in der Bibliothek.
+2. **Vier Präfixe waren anders als erwartet** (`LGTV_` statt `LG_TV_` usw.). Genau
+   deshalb meldet das Werkzeug ein nicht passendes Präfix als Fehler, statt eine leere
+   Datei zu schreiben.
+3. **Absturz in `setKeysForAllRegisteredGUIsAndScenes()`**: Die Schleife über die Szenen
+   rief `this_scene_setKeys()` ohne NULL-Prüfung auf, während die GUI-Schleife direkt
+   darunter seit jeher prüft. Eine Szene ohne Tastenbelegung zu registrieren führte zum
+   Segfault. Behoben.
+4. **Nur die aktiven Befehle sind exportierbar.** Die meisten Gerätequellen tragen
+   deutlich mehr Codes, als sie registrieren („every command takes 100 bytes, whether
+   used or not") — `lgsoundbar` hat 31 Codes und registriert 2. Ab Schritt 8 entfällt
+   dieser Kompromiss: ein Befehl in einer Datei kostet nichts, bis er benutzt wird.
+
+**Nicht enthalten:** Die Start-/End-Sequenzen der Szenen. Sie sind C++-Funktionen mit
+`delay()`, keine Daten. Der Export sagt das ausdrücklich, statt eine unvollständige
+Szene als vollständig auszugeben. Schritt 9 macht Daten daraus — das Dateiformat hat
+den Platz dafür bereits.
 
 ## Schritt 8 — Geräte und Befehle aus JSON registrieren ⬜
 
