@@ -63,6 +63,7 @@ springt die Prozentzahl dort, obwohl die Firmware kaum wächst.
 | `feature/05` system.json | 1.986.305 (63,1 %) | 101.012 | 1.883.073 (35,9 %) | 63.736 |
 | `feature/06` scenes+keys | 1.987.941 (63,2 %) | 101.012 | 1.884.713 (35,9 %) | 63.736 |
 | `feature/07` Export | 2.008.613 (63,9 %) | 101.052 | 1.905.317 (36,3 %) | 63.760 |
+| `feature/08` JSON-Loader | 2.010.097 (63,9 %) | 101.068 | 1.906.833 (36,4 %) | 63.784 |
 
 ⚠️ Schritt 7 kostet **20,6 KB Flash** — der größte Sprung seit Phase 0. Grund ist der
 Serial-Dump im Settings-Screen: er zieht `configExport` samt Serialisierung aller vier
@@ -96,7 +97,7 @@ eingeschaltetem „Show mem usage").
 | 5 | Referenzen über stabile Namen | 1 | ✅ getestet | `feature/01-phase0-foundation` |
 | 6 | Schema und Dateiaufteilung | 1 | ✅ getestet (ui.json → Schritt 15) | `feature/05` + `feature/06-scenes-and-keys` |
 | 7 | Export des einkompilierten Zustands | 1 | ✅ getestet | `feature/07-config-export` |
-| 8 | Geräte und Befehle aus JSON registrieren | 1 | ⬜ offen | |
+| 8 | Geräte und Befehle aus JSON registrieren | 1 | ✅ getestet, im Simulator verifiziert | `feature/08-json-device-loader` |
 | 9 | Sequenz-Engine für Szenen | 1 | ⬜ offen | |
 | 10 | Zugangsdaten im NVS | 1 | ⬜ offen | |
 | 11 | Transport-Abstraktion | 2 | ⬜ offen | |
@@ -120,7 +121,7 @@ eingeschaltetem „Show mem usage").
 
 Legende: ⬜ offen · 🟡 teilweise · ✅ Tests und alle Builds grün
 
-> **Stand der Prüfung:** `pio test -e native_test` (140 Fälle) und `pio run` für
+> **Stand der Prüfung:** `pio test -e native_test` (158 Fälle) und `pio run` für
 > `esp32-Rev1toRev4`, `esp32-s3-Rev5andHigher`, beide Testboard-Environments und
 > `linux_64bit` laufen auf jedem Branch durch.
 >
@@ -442,19 +443,47 @@ sinnvoll durchsieht:
 Szene als vollständig auszugeben. Schritt 9 macht Daten daraus — das Dateiformat hat
 den Platz dafür bereits.
 
-## Schritt 8 — Geräte und Befehle aus JSON registrieren ⬜
+## Schritt 8 — Geräte und Befehle aus JSON registrieren ✅
 
 **Ziel:** Ab hier ein IR-Gerät ohne Neukompilieren hinzufügen.
 
-- [ ] Laden **nach** den C++-Registrierungen beim Start
-- [ ] Namenskonflikt: JSON gewinnt, Warnung ins Log
-- [ ] Defektes oder fehlendes JSON: einkompilierte Konfiguration bleibt aktiv,
-      Fehlermeldung wird für die spätere UI aufgehoben
-- [ ] Hinter `ENABLE_JSON_CONFIG`
-- [ ] Safe-Mode (4b) überspringt diesen Pfad
-- [ ] Snapshot-Test: ohne JSON-Dateien identisch zum Referenz-Snapshot
-- [ ] Test: JSON-Gerät überschreibt ein einkompiliertes Gerät korrekt
-- [ ] Speichermessung mit 10 geladenen Geräten
+- [x] `ConfigFileSystem::list()` — die Anzahl der Geräte steht nicht vorher fest,
+      das Verzeichnis muss gelesen statt geraten werden
+- [x] Laden **nach** den C++-Registrierungen beim Start
+- [x] Namenskonflikt: JSON gewinnt, Warnung ins Log, alte ID funktioniert weiter
+- [x] Defektes JSON: Datei wird übersprungen, alle anderen laden weiter,
+      Grund bleibt im `Report` für die spätere UI erhalten
+- [x] Reines JSON ohne Envelope lädt auch (von Hand aufgespielte Datei), während
+      eine Datei **mit** Envelope und falscher Prüfsumme als „damaged" gemeldet wird
+      — die beiden schicken einen an ganz verschiedene Stellen zur Fehlersuche
+- [x] `.bak` und `.tmp` werden übersprungen: ein `.bak` zu laden würde die vorige
+      Version eines Geräts still neben der aktuellen wiederbeleben
+- [x] Hinter `ENABLE_JSON_CONFIG`; im Simulator **auf 1**, weil dort getestet wird
+- [x] Safe-Mode überspringt den Pfad vollständig
+- [x] Snapshot-Test unverändert
+- [x] 15 Tests für den Loader, 3 für die Idempotenz der Registrierung
+
+**Im Simulator verifiziert**, nicht nur kompiliert:
+
+```
+configLoader: /cfg/devices/broken.json was skipped: not valid JSON
+configLoader: device 'lgTV' with 42 commands
+configLoader: device 'shield' with 13 commands
+configLoader: 2 device(s), 55 command(s), 1 file(s) skipped
+```
+
+**Was dieser Lauf zusätzlich zutage gefördert hat** — ein Leck, das kein Unit-Test
+gezeigt hätte: `setKeysForAllRegisteredGUIsAndScenes()` ruft
+`register_scene_defaultKeys()` bei **jeder** GUI- und Szenen-Registrierung auf. Vier
+Befehle wurden dadurch zehnmal registriert: 38 neue IDs, 38 verwaiste `commandData`
+zu je rund 100 Byte, 38 Warnzeilen — bei jedem Boot.
+Eine byte-gleiche Registrierung verwendet jetzt die vorhandene ID weiter. Das ist auch
+die sicherere Antwort: wer die alte ID noch hält, hat weiterhin einen funktionierenden
+Befehl, weil es *dieselbe* ID ist. Eine Registrierung mit **anderen** Daten überschreibt
+nach wie vor, mit Warnung. Aus 38 Warnungen beim Boot wurden 0.
+
+**Noch offen:** Speichermessung mit 10 geladenen Geräten. Sinnvoll erst auf Hardware,
+weil es um freien Heap geht, nicht um Flash.
 
 ## Schritt 9 — Sequenz-Engine für Szenen ⬜
 
