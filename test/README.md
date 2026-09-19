@@ -18,6 +18,9 @@ pio test -e native_test -v         # with output of every assertion
 | `test/test_command_registry/` | Command registration and dispatch (IR, MQTT, scene, gui, special). |
 | `test/test_scene_registry/` | Scene registration and the key lookup chain gui → scene → default. |
 | `test/test_keys/` | Key handling: `SHORT`, `SHORT_REPEATED`, `SHORTorLONG`, hold time, repeat rate. |
+| `test/fake_filesystem.h` | In-memory file system with fault injection (truncated write, failing rename, bit flip). |
+| `test/test_config_storage/` | Crash safe storage: atomic save, backup rotation, crc, power loss. |
+| `test/test_config_model/` | JSON schema v1: round trip, validation of foreign files, export of the compiled-in configuration. |
 
 Files in the root of `test/` are shared by every test folder, which is why the
 fakes live there.
