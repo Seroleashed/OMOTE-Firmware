@@ -43,7 +43,11 @@
           ];
 
           shellHook = ''
-            export PLATFORMIO_CORE_DIR="$PWD/.platformio"
+            # PLATFORMIO_CORE_DIR is deliberately left alone, so PlatformIO uses
+            # its default ~/.platformio: the xtensa toolchain is roughly 1-2 GB
+            # and is shared with every other PlatformIO project instead of being
+            # downloaded again per checkout. Set it here if you ever need a
+            # toolchain pinned to this repository.
             # PlatformIO ships pre-compiled binaries (xtensa toolchain) that
             # expect a normal FHS system. nix-ld makes them work on NixOS.
             export NIX_LD="$(cat ${pkgs.stdenv.cc}/nix-support/dynamic-linker)"

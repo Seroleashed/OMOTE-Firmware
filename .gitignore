@@ -11,6 +11,7 @@ src/secrets_override.h
 .direnv
 result
 
-# PlatformIO core dir inside the project (see flake.nix shellHook)
+# PlatformIO uses the global ~/.platformio. This only catches the case where
+# somebody points PLATFORMIO_CORE_DIR at the checkout again.
 .platformio
 compile_commands.json
