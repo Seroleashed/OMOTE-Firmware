@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "type": "omote.devicePack",
+  "device": {
+    "id": "airconditioner",
+    "name": "Air conditioner",
+    "manufacturer": "De'Longhi",
+    "model": "PAC N81"
+  },
+  "commands": [
+    {
+      "name": "AIRCONDITIONER_COMMAND",
+      "handler": "IR",
+      "payloads": [
+        "3"
+      ]
+    }
+  ]
+}

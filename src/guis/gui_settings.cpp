@@ -4,6 +4,8 @@
 #include "applicationInternal/firmwareInfo.h"
 #include "applicationInternal/bootGuard.h"
 #include "applicationInternal/memoryUsage.h"
+#include "applicationInternal/storage/configExport.h"
+#include "devices/deviceSelectors.h"
 #include "applicationInternal/gui/guiBase.h"
 #include "applicationInternal/gui/guiRegistry.h"
 #include "applicationInternal/omote_log.h"
@@ -77,6 +79,27 @@ static void motion_threshold_event_cb(lv_event_t* e){
 // show memory usage event handler
 static void showMemoryUsage_event_cb(lv_event_t* e) {
   setShowMemoryUsage(lv_obj_has_state(lv_event_get_target(e), LV_STATE_CHECKED));
+}
+
+// Writes the whole configuration to the serial console as JSON. This is the
+// migration path for anybody who has their devices in C++ today: run it once,
+// copy the blocks out of the terminal, and the devices exist as files.
+static void dumpConfig_event_cb(lv_event_t* e) {
+  (void)e;
+  std::vector<configExport::DeviceSelector> devices;
+  for (size_t i = 0; i < compiledInDevices().size(); i++) {
+    devices.push_back(compiledInDevices()[i]);
+  }
+  // Serial.printf() has a much smaller buffer than the dump, so it goes out
+  // line by line rather than in one call that would be truncated.
+  std::string dump = configExport::dumpConfigAsJson(devices);
+  size_t start = 0;
+  while (start < dump.size()) {
+    size_t end = dump.find('\n', start);
+    if (end == std::string::npos) end = dump.size();
+    Serial.println(dump.substr(start, end - start).c_str());
+    start = end + 1;
+  }
 }
 
 // safe mode event handler. Only arms the flag, it does not restart: the user
@@ -324,6 +347,25 @@ void create_tab_content_settings(lv_obj_t* tab) {
   if (bootGuard::isSafeModeRequestedForNextBoot()) {
     lv_obj_add_state(safeModeToggle, LV_STATE_CHECKED);
   }
+
+  // Configuration ----------------------------------------------------------------------------
+  menuLabel = lv_label_create(tab);
+  lv_label_set_text(menuLabel, "Configuration");
+  menuBox = lv_obj_create(tab);
+  lv_obj_set_size(menuBox, lv_pct(100), 60);
+  lv_obj_set_style_bg_color(menuBox, color_primary, LV_PART_MAIN);
+  lv_obj_set_style_border_width(menuBox, 0, LV_PART_MAIN);
+
+  menuLabel = lv_label_create(menuBox);
+  lv_label_set_text(menuLabel, "Dump as JSON");
+  lv_obj_align(menuLabel, LV_ALIGN_TOP_LEFT, 0, 6);
+  lv_obj_t* dumpButton = lv_btn_create(menuBox);
+  lv_obj_set_size(dumpButton, 70, 26);
+  lv_obj_align(dumpButton, LV_ALIGN_TOP_RIGHT, 0, 0);
+  lv_obj_add_event_cb(dumpButton, dumpConfig_event_cb, LV_EVENT_CLICKED, NULL);
+  lv_obj_t* dumpButtonLabel = lv_label_create(dumpButton);
+  lv_label_set_text(dumpButtonLabel, "Serial");
+  lv_obj_center(dumpButtonLabel);
 }
 
 void notify_tab_before_delete_settings(void) {

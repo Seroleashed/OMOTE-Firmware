@@ -1,0 +1,220 @@
+{
+  "schemaVersion": 1,
+  "type": "omote.devicePack",
+  "device": {
+    "id": "samsungbluray",
+    "name": "Samsung Blu-ray player",
+    "manufacturer": "Samsung",
+    "model": ""
+  },
+  "commands": [
+    {
+      "name": "SAMSUNGBLURAY_POWER",
+      "handler": "IR",
+      "payloads": [
+        "56",
+        "0x400E00FF"
+      ]
+    },
+    {
+      "name": "SAMSUNGBLURAY_OPEN_CLOSE",
+      "handler": "IR",
+      "payloads": [
+        "56",
+        "0x400E807F"
+      ]
+    },
+    {
+      "name": "SAMSUNGBLURAY_DISC_MENU",
+      "handler": "IR",
+      "payloads": [
+        "56",
+        "0x400EB847"
+      ]
+    },
+    {
+      "name": "SAMSUNGBLURAY_PREVIOUS",
+      "handler": "IR",
+      "payloads": [
+        "56",
+        "0x400EB04F"
+      ]
+    },
+    {
+      "name": "SAMSUNGBLURAY_SKIP",
+      "handler": "IR",
+      "payloads": [
+        "56",
+        "0x400E8877"
+      ]
+    },
+    {
+      "name": "SAMSUNGBLURAY_REW",
+      "handler": "IR",
+      "payloads": [
+        "56",
+        "0x400E48B7"
+      ]
+    },
+    {
+      "name": "SAMSUNGBLURAY_FF",
+      "handler": "IR",
+      "payloads": [
+        "56",
+        "0x400EA857"
+      ]
+    },
+    {
+      "name": "SAMSUNGBLURAY_STOP",
+      "handler": "IR",
+      "payloads": [
+        "56",
+        "0x400EC837"
+      ]
+    },
+    {
+      "name": "SAMSUNGBLURAY_PLAY",
+      "handler": "IR",
+      "payloads": [
+        "56",
+        "0x400E28D7"
+      ]
+    },
+    {
+      "name": "SAMSUNGBLURAY_PAUSE",
+      "handler": "IR",
+      "payloads": [
+        "56",
+        "0x400E4CB3"
+      ]
+    },
+    {
+      "name": "SAMSUNGBLURAY_AUDIO",
+      "handler": "IR",
+      "payloads": [
+        "56",
+        "0x400EA45B"
+      ]
+    },
+    {
+      "name": "SAMSUNGBLURAY_HOME",
+      "handler": "IR",
+      "payloads": [
+        "56",
+        "0x400E6897"
+      ]
+    },
+    {
+      "name": "SAMSUNGBLURAY_SUBTITLE",
+      "handler": "IR",
+      "payloads": [
+        "56",
+        "0x400E649B"
+      ]
+    },
+    {
+      "name": "SAMSUNGBLURAY_TOOLS",
+      "handler": "IR",
+      "payloads": [
+        "56",
+        "0x400E5CA3"
+      ]
+    },
+    {
+      "name": "SAMSUNGBLURAY_INFO",
+      "handler": "IR",
+      "payloads": [
+        "56",
+        "0x400E7887"
+      ]
+    },
+    {
+      "name": "SAMSUNGBLURAY_CURSOR_UP",
+      "handler": "IR",
+      "payloads": [
+        "56",
+        "0x400E18E7"
+      ]
+    },
+    {
+      "name": "SAMSUNGBLURAY_LEFT",
+      "handler": "IR",
+      "payloads": [
+        "56",
+        "0x400ED827"
+      ]
+    },
+    {
+      "name": "SAMSUNGBLURAY_ENTER",
+      "handler": "IR",
+      "payloads": [
+        "56",
+        "0x400E38C7"
+      ]
+    },
+    {
+      "name": "SAMSUNGBLURAY_RIGHT",
+      "handler": "IR",
+      "payloads": [
+        "56",
+        "0x400E58A7"
+      ]
+    },
+    {
+      "name": "SAMSUNGBLURAY_CURSOR_DOWN",
+      "handler": "IR",
+      "payloads": [
+        "56",
+        "0x400E9867"
+      ]
+    },
+    {
+      "name": "SAMSUNGBLURAY_BACK",
+      "handler": "IR",
+      "payloads": [
+        "56",
+        "0x400EE817"
+      ]
+    },
+    {
+      "name": "SAMSUNGBLURAY_EXIT",
+      "handler": "IR",
+      "payloads": [
+        "56",
+        "0x400ED42B"
+      ]
+    },
+    {
+      "name": "SAMSUNGBLURAY_KEY_A",
+      "handler": "IR",
+      "payloads": [
+        "56",
+        "0x400E847B"
+      ]
+    },
+    {
+      "name": "SAMSUNGBLURAY_KEY_B",
+      "handler": "IR",
+      "payloads": [
+        "56",
+        "0x400E44BB"
+      ]
+    },
+    {
+      "name": "SAMSUNGBLURAY_KEY_C",
+      "handler": "IR",
+      "payloads": [
+        "56",
+        "0x400EC43B"
+      ]
+    },
+    {
+      "name": "SAMSUNGBLURAY_KEY_D",
+      "handler": "IR",
+      "payloads": [
+        "56",
+        "0x400E24DB"
+      ]
+    }
+  ]
+}

@@ -275,3 +275,7 @@ void wifi_shutdown() {
 void get_heapUsage(unsigned long *heapSize, unsigned long *freeHeap, unsigned long *maxAllocHeap, unsigned long *minFreeHeap) {
   get_heapUsage_HAL(heapSize, freeHeap, maxAllocHeap, minFreeHeap);
 }
+
+bool get_keypadMatrix(char (*matrix)[keypadCOLS]) {
+  return get_keypadMatrix_HAL(matrix);
+}

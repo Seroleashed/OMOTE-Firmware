@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "type": "omote.devicePack",
+  "device": {
+    "id": "lgsoundbar",
+    "name": "LG soundbar",
+    "manufacturer": "LG",
+    "model": ""
+  },
+  "commands": [
+    {
+      "name": "LGSOUNDBAR_POWER",
+      "handler": "IR",
+      "payloads": [
+        "7",
+        "0x34347887"
+      ]
+    },
+    {
+      "name": "LGSOUNDBAR_WOOFER_LEVEL",
+      "handler": "IR",
+      "payloads": [
+        "7",
+        "0x34346699"
+      ]
+    }
+  ]
+}

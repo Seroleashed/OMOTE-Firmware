@@ -62,6 +62,14 @@ void setActiveSceneName(std::string sceneName);
 void setActiveGUIname(std::string guiName);
 void setActiveGUIlist(int guiList);
 
+// --- keypad layout ----------------------------------------------------------
+// What the faked get_keypadMatrix() reports. Off by default, so a test that
+// does not care sees the same "there is no matrix" answer the simulator gives.
+extern bool keypadMatrixAvailable;
+extern char keypadMatrix[keypadROWS][keypadCOLS];
+void setKeypadMatrix(const char (*matrix)[keypadCOLS]);
+void clearKeypadMatrix();
+
 // --- keypad injection -------------------------------------------------------
 // Row/col of the 5x5 matrix. keyChar is what the scene key maps use.
 void pressKey(uint8_t row, uint8_t col, char keyChar);

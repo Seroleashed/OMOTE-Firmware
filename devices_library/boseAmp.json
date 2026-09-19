@@ -1,0 +1,229 @@
+{
+  "schemaVersion": 1,
+  "type": "omote.devicePack",
+  "device": {
+    "id": "boseAmp",
+    "name": "Bose amplifier",
+    "manufacturer": "Bose",
+    "model": ""
+  },
+  "commands": [
+    {
+      "name": "BOSE_POWER_ON",
+      "handler": "IR",
+      "payloads": [
+        "75",
+        "0x5DD2A05F:32:2"
+      ]
+    },
+    {
+      "name": "BOSE_POWER_OFF",
+      "handler": "IR",
+      "payloads": [
+        "75",
+        "0x5DD2A45B:32:2"
+      ]
+    },
+    {
+      "name": "BOSE_CBL_SAT",
+      "handler": "IR",
+      "payloads": [
+        "75",
+        "0x5DD2A857:32:2"
+      ]
+    },
+    {
+      "name": "BOSE_BD_DVD",
+      "handler": "IR",
+      "payloads": [
+        "75",
+        "0x5DD2CA35:32:2"
+      ]
+    },
+    {
+      "name": "BOSE_GAME",
+      "handler": "IR",
+      "payloads": [
+        "75",
+        "0x5DD2609F:32:2"
+      ]
+    },
+    {
+      "name": "BOSE_TV",
+      "handler": "IR",
+      "payloads": [
+        "75",
+        "0x5DD2708F:32:2"
+      ]
+    },
+    {
+      "name": "BOSE_BLUETOOTH",
+      "handler": "IR",
+      "payloads": [
+        "75",
+        "0x5DD2CD32:32:2"
+      ]
+    },
+    {
+      "name": "BOSE_AUX",
+      "handler": "IR",
+      "payloads": [
+        "75",
+        "0x5DD2B04F:32:2"
+      ]
+    },
+    {
+      "name": "BOSE_INPUT",
+      "handler": "IR",
+      "payloads": [
+        "75",
+        "0x5DD23CC3:32:2"
+      ]
+    },
+    {
+      "name": "BOSE_AUDIO",
+      "handler": "IR",
+      "payloads": [
+        "75",
+        "0x5DD232CD:32:2"
+      ]
+    },
+    {
+      "name": "BOSE_SOURCE",
+      "handler": "IR",
+      "payloads": [
+        "75",
+        "0x5DD234CB:32:2"
+      ]
+    },
+    {
+      "name": "BOSE_MENU",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x5DD209F6:32:0"
+      ]
+    },
+    {
+      "name": "BOSE_GUIDE",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x5DD20BF4:32:0"
+      ]
+    },
+    {
+      "name": "BOSE_INFO",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x5DD226D9:32:0"
+      ]
+    },
+    {
+      "name": "BOSE_EXIT",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x5DD20CF3:32:0",
+        "0x5DD28C73:32:0"
+      ]
+    },
+    {
+      "name": "BOSE_UP",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x5DD203FC:32:0"
+      ]
+    },
+    {
+      "name": "BOSE_DOWN",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x5DD204FB:32:0"
+      ]
+    },
+    {
+      "name": "BOSE_LEFT",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x5DD205FA:32:0"
+      ]
+    },
+    {
+      "name": "BOSE_RIGHT",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x5DD206F9:32:0"
+      ]
+    },
+    {
+      "name": "BOSE_OK",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x5DD207F8:32:0"
+      ]
+    },
+    {
+      "name": "BOSE_VOL_UP",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x5DD2C03F:32:0"
+      ]
+    },
+    {
+      "name": "BOSE_VOL_DOWN",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x5DD240BF:32:0"
+      ]
+    },
+    {
+      "name": "BOSE_DVR",
+      "handler": "IR",
+      "payloads": [
+        "75",
+        "0x5DD26D92:32:2"
+      ]
+    },
+    {
+      "name": "BOSE_WORLD",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x5DD2837C:32:0"
+      ]
+    },
+    {
+      "name": "BOSE_SYSTEM",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x5DD201FE:32:0"
+      ]
+    },
+    {
+      "name": "BOSE_MUTE",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x5DD2807F:32:0"
+      ]
+    },
+    {
+      "name": "BOSE_BACK",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x5DD228D7:32:0"
+      ]
+    }
+  ]
+}

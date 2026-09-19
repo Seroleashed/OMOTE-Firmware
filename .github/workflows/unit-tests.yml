@@ -23,3 +23,21 @@ jobs:
 
       - name: Run native unit tests
         run: pio test -e native_test -v
+
+      # A second opinion on the generated files: the firmware decides what it
+      # accepts, the schemas decide what we are willing to publish. When the two
+      # disagree, one of them has a bug.
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Validate the device library against the JSON schemas
+        run: uv run tools/validate_config.py devices_library/*.json
+
+      # The library is generated, so a device changed in C++ without re-running
+      # the exporter would leave the two out of step.
+      - name: Check that the device library is up to date
+        run: |
+          pio run -e config_export
+          .pio/build/config_export/program devices_library
+          git diff --exit-code devices_library/ \
+            || (echo "devices_library/ is out of date - run the exporter and commit the result" && exit 1)

@@ -23,6 +23,23 @@ std::vector<SceneCall> guiCalls;
 std::vector<std::string> shownIRMessages;
 int activityTimestampsSet = 0;
 
+// The layout the faked get_keypadMatrix() reports. Off by default, so a test
+// that does not care about the matrix sees the same "no matrix" answer the
+// simulator gives.
+bool keypadMatrixAvailable = false;
+char keypadMatrix[keypadROWS][keypadCOLS] = {{0}};
+
+void setKeypadMatrix(const char (*matrix)[keypadCOLS]) {
+  keypadMatrixAvailable = true;
+  for (uint8_t row = 0; row < keypadROWS; row++) {
+    for (uint8_t col = 0; col < keypadCOLS; col++) {
+      keypadMatrix[row][col] = matrix[row][col];
+    }
+  }
+}
+
+void clearKeypadMatrix() { keypadMatrixAvailable = false; }
+
 static unsigned long fakeMillis = 10000;
 static std::string activeSceneName = "";
 
@@ -202,6 +219,15 @@ void getKeys(rawKey (*keys)[keypadCOLS], unsigned long currentMillis) {
   (void)keys;
   (void)currentMillis;
   fakes::pollFakeKeys();
+}
+bool get_keypadMatrix(char (*matrix)[keypadCOLS]) {
+  if (!fakes::keypadMatrixAvailable) return false;
+  for (uint8_t row = 0; row < keypadROWS; row++) {
+    for (uint8_t col = 0; col < keypadCOLS; col++) {
+      matrix[row][col] = fakes::keypadMatrix[row][col];
+    }
+  }
+  return true;
 }
 #if (OMOTE_HARDWARE_REV >= 5)
 void update_keyboardBrightness(void) {}

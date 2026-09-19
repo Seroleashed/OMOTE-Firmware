@@ -1,0 +1,188 @@
+{
+  "schemaVersion": 1,
+  "type": "omote.devicePack",
+  "device": {
+    "id": "lgbluray",
+    "name": "LG Blu-ray player",
+    "manufacturer": "LG",
+    "model": ""
+  },
+  "commands": [
+    {
+      "name": "LGBLURAY_POWER",
+      "handler": "IR",
+      "payloads": [
+        "7",
+        "0xB4B40CF3"
+      ]
+    },
+    {
+      "name": "LGBLURAY_OPEN_CLOSE",
+      "handler": "IR",
+      "payloads": [
+        "7",
+        "0xB4B46C93"
+      ]
+    },
+    {
+      "name": "LGBLURAY_REW",
+      "handler": "IR",
+      "payloads": [
+        "7",
+        "0xB4B44CB3"
+      ]
+    },
+    {
+      "name": "LGBLURAY_FF",
+      "handler": "IR",
+      "payloads": [
+        "7",
+        "0xB4B4CC33"
+      ]
+    },
+    {
+      "name": "LGBLURAY_PREVIOUS",
+      "handler": "IR",
+      "payloads": [
+        "7",
+        "0xB4B4AC53"
+      ]
+    },
+    {
+      "name": "LGBLURAY_SKIP",
+      "handler": "IR",
+      "payloads": [
+        "7",
+        "0xB4B42CD3"
+      ]
+    },
+    {
+      "name": "LGBLURAY_PAUSE",
+      "handler": "IR",
+      "payloads": [
+        "7",
+        "0xB4B41CE3"
+      ]
+    },
+    {
+      "name": "LGBLURAY_PLAY",
+      "handler": "IR",
+      "payloads": [
+        "7",
+        "0xB4B48C73"
+      ]
+    },
+    {
+      "name": "LGBLURAY_STOP",
+      "handler": "IR",
+      "payloads": [
+        "7",
+        "0xB4B49C63"
+      ]
+    },
+    {
+      "name": "LGBLURAY_HOME",
+      "handler": "IR",
+      "payloads": [
+        "7",
+        "0xB4B4E619"
+      ]
+    },
+    {
+      "name": "LGBLURAY_INFO",
+      "handler": "IR",
+      "payloads": [
+        "7",
+        "0xB4B45CA3"
+      ]
+    },
+    {
+      "name": "LGBLURAY_CURSOR_UP",
+      "handler": "IR",
+      "payloads": [
+        "7",
+        "0xB4B4E21D"
+      ]
+    },
+    {
+      "name": "LGBLURAY_LEFT",
+      "handler": "IR",
+      "payloads": [
+        "7",
+        "0xB4B49A65"
+      ]
+    },
+    {
+      "name": "LGBLURAY_ENTER",
+      "handler": "IR",
+      "payloads": [
+        "7",
+        "0xB4B41AE5"
+      ]
+    },
+    {
+      "name": "LGBLURAY_RIGHT",
+      "handler": "IR",
+      "payloads": [
+        "7",
+        "0xB4B45AA5"
+      ]
+    },
+    {
+      "name": "LGBLURAY_CURSOR_DOWN",
+      "handler": "IR",
+      "payloads": [
+        "7",
+        "0xB4B412ED"
+      ]
+    },
+    {
+      "name": "LGBLURAY_BACK",
+      "handler": "IR",
+      "payloads": [
+        "7",
+        "0xB4B4A25D"
+      ]
+    },
+    {
+      "name": "LGBLURAY_DISC_MENU",
+      "handler": "IR",
+      "payloads": [
+        "7",
+        "0xB4B4D22D"
+      ]
+    },
+    {
+      "name": "LGBLURAY_KEY_A",
+      "handler": "IR",
+      "payloads": [
+        "7",
+        "0xB4B43EC1"
+      ]
+    },
+    {
+      "name": "LGBLURAY_KEY_B",
+      "handler": "IR",
+      "payloads": [
+        "7",
+        "0xB4B4BE41"
+      ]
+    },
+    {
+      "name": "LGBLURAY_KEY_C",
+      "handler": "IR",
+      "payloads": [
+        "7",
+        "0xB4B47E81"
+      ]
+    },
+    {
+      "name": "LGBLURAY_KEY_D",
+      "handler": "IR",
+      "payloads": [
+        "7",
+        "0xB4B4FE01"
+      ]
+    }
+  ]
+}

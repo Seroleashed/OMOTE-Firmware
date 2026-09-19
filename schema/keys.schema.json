@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/KlausMu/OMOTE-Firmware/schema/keys.schema.json",
+  "title": "OMOTE keypad matrix",
+  "description": "The 5x5 matrix. Carries the hardware revision because Rev5 and Rev1-4 hold the same keys in reversed row order - importing the wrong file mirrors the keypad.",
+  "type": "object",
+  "required": ["schemaVersion", "type", "matrix"],
+  "properties": {
+    "schemaVersion": { "type": "integer", "minimum": 1, "maximum": 1 },
+    "type": { "const": "omote.keys" },
+    "hardwareRev": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "0 means not stated, accepted on any revision."
+    },
+    "matrix": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 5,
+      "items": {
+        "type": "array",
+        "minItems": 5,
+        "maxItems": 5,
+        "items": {
+          "type": "string",
+          "description": "A key name or an empty string for a position without a key.",
+          "pattern": "^(KEY_[A-Z0-9]+)?$"
+        }
+      }
+    }
+  }
+}

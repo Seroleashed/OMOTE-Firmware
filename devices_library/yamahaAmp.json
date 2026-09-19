@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 1,
+  "type": "omote.devicePack",
+  "device": {
+    "id": "yamahaAmp",
+    "name": "Yamaha amplifier",
+    "manufacturer": "Yamaha",
+    "model": ""
+  },
+  "commands": [
+    {
+      "name": "YAMAHA_INPUT_DVD",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x5EA1837C"
+      ]
+    },
+    {
+      "name": "YAMAHA_INPUT_DTV",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x5EA12AD5"
+      ]
+    },
+    {
+      "name": "YAMAHA_STANDARD",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x5EA109F6"
+      ]
+    },
+    {
+      "name": "YAMAHA_VOL_MINUS",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x5EA1D827"
+      ]
+    },
+    {
+      "name": "YAMAHA_VOL_PLUS",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x5EA158A7"
+      ]
+    },
+    {
+      "name": "YAMAHA_MUTE_TOGGLE",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x5EA138C7"
+      ]
+    },
+    {
+      "name": "YAMAHA_POWER_OFF",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x5EA17887"
+      ]
+    },
+    {
+      "name": "YAMAHA_POWER_ON",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x5EA1B847"
+      ]
+    }
+  ]
+}

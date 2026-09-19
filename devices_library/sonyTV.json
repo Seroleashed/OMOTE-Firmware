@@ -1,0 +1,372 @@
+{
+  "schemaVersion": 1,
+  "type": "omote.devicePack",
+  "device": {
+    "id": "sonyTV",
+    "name": "Sony TV",
+    "manufacturer": "Sony",
+    "model": ""
+  },
+  "commands": [
+    {
+      "name": "SONY_POWER_ON",
+      "handler": "IR",
+      "payloads": [
+        "4",
+        "0x750:12:2"
+      ]
+    },
+    {
+      "name": "SONY_POWER_OFF",
+      "handler": "IR",
+      "payloads": [
+        "4",
+        "0xF50:12:2"
+      ]
+    },
+    {
+      "name": "SONY_POWER_TOGGLE",
+      "handler": "IR",
+      "payloads": [
+        "4",
+        "0xA90:12:2"
+      ]
+    },
+    {
+      "name": "SONY_CHANNEL_UP",
+      "handler": "IR",
+      "payloads": [
+        "4",
+        "0x90:12:2"
+      ]
+    },
+    {
+      "name": "SONY_CHANNEL_DOWN",
+      "handler": "IR",
+      "payloads": [
+        "4",
+        "0x890:12:2"
+      ]
+    },
+    {
+      "name": "SONY_CONFIGURATION",
+      "handler": "IR",
+      "payloads": [
+        "4",
+        "0x723:15:2"
+      ]
+    },
+    {
+      "name": "SONY_PLAY",
+      "handler": "IR",
+      "payloads": [
+        "4",
+        "0x2CE9:15:2"
+      ]
+    },
+    {
+      "name": "SONY_PAUSE",
+      "handler": "IR",
+      "payloads": [
+        "4",
+        "0x4CE9:15:2"
+      ]
+    },
+    {
+      "name": "SONY_STOP",
+      "handler": "IR",
+      "payloads": [
+        "4",
+        "0x0CE9:15:2"
+      ]
+    },
+    {
+      "name": "SONY_REWIND",
+      "handler": "IR",
+      "payloads": [
+        "4",
+        "0x6CE9:15:2"
+      ]
+    },
+    {
+      "name": "SONY_FASTFORWARD",
+      "handler": "IR",
+      "payloads": [
+        "4",
+        "0x1CE9:15:2"
+      ]
+    },
+    {
+      "name": "SONY_MENU",
+      "handler": "IR",
+      "payloads": [
+        "4",
+        "0x5758:15:2"
+      ]
+    },
+    {
+      "name": "SONY_PREV",
+      "handler": "IR",
+      "payloads": [
+        "4",
+        "0x1EE9:15:2"
+      ]
+    },
+    {
+      "name": "SONY_NEXT",
+      "handler": "IR",
+      "payloads": [
+        "4",
+        "0x5EE9:15:2"
+      ]
+    },
+    {
+      "name": "SONY_INTERNET_VIDEO",
+      "handler": "IR",
+      "payloads": [
+        "4",
+        "0x4F58:15:2"
+      ]
+    },
+    {
+      "name": "SONY_FAVOURITE",
+      "handler": "IR",
+      "payloads": [
+        "4",
+        "0x37EE:15:2"
+      ]
+    },
+    {
+      "name": "SONY_GUIDE",
+      "handler": "IR",
+      "payloads": [
+        "4",
+        "0x6D25:15:2"
+      ]
+    },
+    {
+      "name": "SONY_INFO",
+      "handler": "IR",
+      "payloads": [
+        "4",
+        "0x5D0:12:2"
+      ]
+    },
+    {
+      "name": "SONY_RETURN",
+      "handler": "IR",
+      "payloads": [
+        "4",
+        "0x62E9:15:2"
+      ]
+    },
+    {
+      "name": "SONY_OPTIONS",
+      "handler": "IR",
+      "payloads": [
+        "4",
+        "0x36E9:15:2"
+      ]
+    },
+    {
+      "name": "SONY_HOME",
+      "handler": "IR",
+      "payloads": [
+        "4",
+        "0x70:12:2"
+      ]
+    },
+    {
+      "name": "SONY_UP",
+      "handler": "IR",
+      "payloads": [
+        "4",
+        "0x2F0:12:2"
+      ]
+    },
+    {
+      "name": "SONY_DOWN",
+      "handler": "IR",
+      "payloads": [
+        "4",
+        "0xAF0:12:2"
+      ]
+    },
+    {
+      "name": "SONY_LEFT",
+      "handler": "IR",
+      "payloads": [
+        "4",
+        "0x2D0:12:2"
+      ]
+    },
+    {
+      "name": "SONY_RIGHT",
+      "handler": "IR",
+      "payloads": [
+        "4",
+        "0xCD0:12:2"
+      ]
+    },
+    {
+      "name": "SONY_SELECT",
+      "handler": "IR",
+      "payloads": [
+        "4",
+        "0xA70:12:2"
+      ]
+    },
+    {
+      "name": "SONY_RED",
+      "handler": "IR",
+      "payloads": [
+        "4",
+        "0x52E9:12:2"
+      ]
+    },
+    {
+      "name": "SONY_GREEN",
+      "handler": "IR",
+      "payloads": [
+        "4",
+        "0x32E9:12:2"
+      ]
+    },
+    {
+      "name": "SONY_YELLOW",
+      "handler": "IR",
+      "payloads": [
+        "4",
+        "0x72E9:12:2"
+      ]
+    },
+    {
+      "name": "SONY_BLUE",
+      "handler": "IR",
+      "payloads": [
+        "4",
+        "0x12E9:12:2"
+      ]
+    },
+    {
+      "name": "SONY_NUM_1",
+      "handler": "IR",
+      "payloads": [
+        "4",
+        "0x010:12:2"
+      ]
+    },
+    {
+      "name": "SONY_NUM_2",
+      "handler": "IR",
+      "payloads": [
+        "4",
+        "0x810:12:2"
+      ]
+    },
+    {
+      "name": "SONY_NUM_3",
+      "handler": "IR",
+      "payloads": [
+        "4",
+        "0x410:12:2"
+      ]
+    },
+    {
+      "name": "SONY_NUM_4",
+      "handler": "IR",
+      "payloads": [
+        "4",
+        "0xC10:12:2"
+      ]
+    },
+    {
+      "name": "SONY_NUM_5",
+      "handler": "IR",
+      "payloads": [
+        "4",
+        "0x210:12:2"
+      ]
+    },
+    {
+      "name": "SONY_NUM_6",
+      "handler": "IR",
+      "payloads": [
+        "4",
+        "0xA10:12:2"
+      ]
+    },
+    {
+      "name": "SONY_NUM_7",
+      "handler": "IR",
+      "payloads": [
+        "4",
+        "0x610:12:2"
+      ]
+    },
+    {
+      "name": "SONY_NUM_8",
+      "handler": "IR",
+      "payloads": [
+        "4",
+        "0xE10:12:2"
+      ]
+    },
+    {
+      "name": "SONY_NUM_9",
+      "handler": "IR",
+      "payloads": [
+        "4",
+        "0x110:12:2"
+      ]
+    },
+    {
+      "name": "SONY_NUM_0",
+      "handler": "IR",
+      "payloads": [
+        "4",
+        "0x910:12:2"
+      ]
+    },
+    {
+      "name": "SONY_INPUT_HDMI_1",
+      "handler": "IR",
+      "payloads": [
+        "4",
+        "0x2D58:15:2"
+      ]
+    },
+    {
+      "name": "SONY_INPUT_HDMI_2",
+      "handler": "IR",
+      "payloads": [
+        "4",
+        "0x6D58:15:2"
+      ]
+    },
+    {
+      "name": "SONY_INPUT_HDMI_3",
+      "handler": "IR",
+      "payloads": [
+        "4",
+        "0x1D58:15:2"
+      ]
+    },
+    {
+      "name": "SONY_INPUT_HDMI_4",
+      "handler": "IR",
+      "payloads": [
+        "4",
+        "0x5D58:15:2"
+      ]
+    },
+    {
+      "name": "SONY_INPUT_TV",
+      "handler": "IR",
+      "payloads": [
+        "4",
+        "0x250:15:2"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/KlausMu/OMOTE-Firmware/schema/devicePack.schema.json",
+  "title": "OMOTE device pack",
+  "description": "One device with all its commands. This is the exchange format: what the web UI edits, what goes over USB or BLE, and what gets shared in the community.",
+  "type": "object",
+  "required": ["schemaVersion", "type", "device", "commands"],
+  "properties": {
+    "schemaVersion": { "type": "integer", "minimum": 1, "maximum": 1 },
+    "type": { "const": "omote.devicePack" },
+    "device": {
+      "type": "object",
+      "required": ["id"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Also the file name. No slashes, so it cannot escape /cfg/devices/.",
+          "pattern": "^[A-Za-z0-9_-]+$"
+        },
+        "name": { "type": "string" },
+        "manufacturer": { "type": "string" },
+        "model": { "type": "string" }
+      }
+    },
+    "commands": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "handler", "payloads"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The stable reference. Command ids are handed out in registration order and never appear in a file.",
+            "pattern": "^[A-Za-z0-9_]+$"
+          },
+          "handler": {
+            "enum": ["IR", "MQTT", "BLE_KEYBOARD", "SCENE", "GUI", "SPECIAL"],
+            "description": "The enum name, not a number, so the file survives a reordering of the enum. A build without MQTT rejects an MQTT pack by name."
+          },
+          "payloads": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string" },
+            "description": "For IR: protocol number first, then the code. Everything is a string on purpose - an IR code is not a number you want a JSON parser to round."
+          }
+        }
+      }
+    }
+  }
+}

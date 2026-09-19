@@ -1,0 +1,132 @@
+{
+  "schemaVersion": 1,
+  "type": "omote.devicePack",
+  "device": {
+    "id": "appleTV",
+    "name": "Apple TV",
+    "manufacturer": "Apple",
+    "model": ""
+  },
+  "commands": [
+    {
+      "name": "APPLETV_UP",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x77E15080"
+      ]
+    },
+    {
+      "name": "APPLETV_DOWN",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x77E13080"
+      ]
+    },
+    {
+      "name": "APPLETV_LEFT",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x77E19080"
+      ]
+    },
+    {
+      "name": "APPLETV_RIGHT",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x77E16080"
+      ]
+    },
+    {
+      "name": "APPLETV_OK",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x77E13A80"
+      ]
+    },
+    {
+      "name": "APPLETV_PLAY",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x77E1FA80"
+      ]
+    },
+    {
+      "name": "APPLETV_PAUSE",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0xA7E14C80:32:1"
+      ]
+    },
+    {
+      "name": "APPLETV_10_SECOND_BACK",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0xA7E16480:32:1"
+      ]
+    },
+    {
+      "name": "APPLETV_10_SECOND_FOREWARD",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0xA7E11080:32:1"
+      ]
+    },
+    {
+      "name": "APPLETV_NEXT",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0xA7E1C480:32:1"
+      ]
+    },
+    {
+      "name": "APPLETV_PREVIOUS",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0xA7E1A480:32:1"
+      ]
+    },
+    {
+      "name": "APPLETV_MENU",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x77E1C080"
+      ]
+    },
+    {
+      "name": "APPLETV_HOME",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0xA7E10280:32:1"
+      ]
+    },
+    {
+      "name": "APPLETV_POWER_ON",
+      "handler": "IR",
+      "payloads": [
+        "31",
+        "38380,1,69,347,173,22,65,22,22,22,65,22,22,22,22,22,65,22,65,22,65,22,65,22,65,22,65,22,22,22,22,22,22,22,22,22,65,22,22,22,22,22,65,22,65,22,22,22,65,22,22,22,22,22,22,22,65,22,65,22,65,22,65,22,65,22,65,22,65,22,1397,347,87,22,3692"
+      ]
+    },
+    {
+      "name": "APPLETV_POWER_OFF",
+      "handler": "IR",
+      "payloads": [
+        "31",
+        "38380,1,69,347,173,22,65,22,22,22,65,22,22,22,22,22,65,22,65,22,65,22,65,22,65,22,65,22,22,22,22,22,22,22,22,22,65,22,22,22,65,22,22,22,65,22,22,22,65,22,22,22,22,22,22,22,65,22,65,22,65,22,65,22,65,22,65,22,65,22,1397,347,87,22,3692"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/KlausMu/OMOTE-Firmware/schema/system.schema.json",
+  "title": "OMOTE system configuration",
+  "description": "Everything that is neither a device, a scene nor a screen. Deliberately without credentials: WiFi and MQTT passwords live in NVS so this file can be shared as it is.",
+  "type": "object",
+  "required": ["schemaVersion", "type"],
+  "properties": {
+    "schemaVersion": { "type": "integer", "minimum": 1, "maximum": 1 },
+    "type": { "const": "omote.system" },
+    "deviceName": { "type": "string", "minLength": 1 },
+    "display": {
+      "type": "object",
+      "properties": {
+        "backlightBrightness": { "type": "integer", "minimum": 0, "maximum": 255 },
+        "keyboardBrightness": { "type": "integer", "minimum": 0, "maximum": 255 }
+      }
+    },
+    "sleep": {
+      "type": "object",
+      "properties": {
+        "timeoutMs": { "type": "integer", "minimum": 0 },
+        "wakeupByIMU": { "type": "boolean" },
+        "motionThreshold": { "type": "integer", "minimum": 0, "maximum": 255 }
+      }
+    },
+    "mqtt": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "broker": { "type": "string" },
+        "port": { "type": "integer", "minimum": 1, "maximum": 65535 },
+        "clientName": { "type": "string" }
+      },
+      "not": {
+        "anyOf": [
+          { "required": ["password"] },
+          { "required": ["user"] }
+        ]
+      },
+      "description": "No user and no password here - that is enforced above, not just documented."
+    }
+  }
+}

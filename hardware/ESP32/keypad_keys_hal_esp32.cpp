@@ -251,3 +251,15 @@ void set_keyboardBrightness_HAL(uint8_t aKeyboardBrightness) {
   keyboardBrightness = aKeyboardBrightness;
 };
 #endif
+bool get_keypadMatrix_HAL(char (*matrix)[keypadCOLS]) {
+  for (uint8_t row = 0; row < keypadROWS; row++) {
+    for (uint8_t col = 0; col < keypadCOLS; col++) {
+      #if(OMOTE_HARDWARE_REV >= 5)
+        matrix[row][col] = keypadChars[row][col];
+      #else
+        matrix[row][col] = hexaKeys[row][col];
+      #endif
+    }
+  }
+  return true;
+}

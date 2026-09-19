@@ -48,3 +48,8 @@ void keys_getKeys_HAL(void* ptr, unsigned long currentMillis) {
   // remove first event
   keyEventsQueue.pop();
 }
+bool get_keypadMatrix_HAL(char (*matrix)[5]) {
+  // no matrix in the simulator, see the header
+  (void)matrix;
+  return false;
+}

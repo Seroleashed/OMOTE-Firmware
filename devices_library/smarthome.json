@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "type": "omote.devicePack",
+  "device": {
+    "id": "smarthome",
+    "name": "Smart home",
+    "manufacturer": "",
+    "model": ""
+  },
+  "commands": [
+    {
+      "name": "SMARTHOME_MQTT_BULB1_SET",
+      "handler": "MQTT",
+      "payloads": [
+        "bulb1_set"
+      ]
+    },
+    {
+      "name": "SMARTHOME_MQTT_BULB2_SET",
+      "handler": "MQTT",
+      "payloads": [
+        "bulb2_set"
+      ]
+    },
+    {
+      "name": "SMARTHOME_MQTT_BULB1_BRIGHTNESS_SET",
+      "handler": "MQTT",
+      "payloads": [
+        "bulb1_setbrightness"
+      ]
+    },
+    {
+      "name": "SMARTHOME_MQTT_BULB2_BRIGHTNESS_SET",
+      "handler": "MQTT",
+      "payloads": [
+        "bulb2_setbrightness"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,252 @@
+{
+  "schemaVersion": 1,
+  "type": "omote.devicePack",
+  "device": {
+    "id": "samsungTV",
+    "name": "Samsung TV",
+    "manufacturer": "Samsung",
+    "model": "UE32EH5300"
+  },
+  "commands": [
+    {
+      "name": "SAMSUNG_NUM_1",
+      "handler": "IR",
+      "payloads": [
+        "7",
+        "0xE0E020DF"
+      ]
+    },
+    {
+      "name": "SAMSUNG_NUM_2",
+      "handler": "IR",
+      "payloads": [
+        "7",
+        "0xE0E0A05F"
+      ]
+    },
+    {
+      "name": "SAMSUNG_NUM_3",
+      "handler": "IR",
+      "payloads": [
+        "7",
+        "0xE0E0609F"
+      ]
+    },
+    {
+      "name": "SAMSUNG_NUM_4",
+      "handler": "IR",
+      "payloads": [
+        "7",
+        "0xE0E010EF"
+      ]
+    },
+    {
+      "name": "SAMSUNG_NUM_5",
+      "handler": "IR",
+      "payloads": [
+        "7",
+        "0xE0E0906F"
+      ]
+    },
+    {
+      "name": "SAMSUNG_NUM_6",
+      "handler": "IR",
+      "payloads": [
+        "7",
+        "0xE0E050AF"
+      ]
+    },
+    {
+      "name": "SAMSUNG_NUM_7",
+      "handler": "IR",
+      "payloads": [
+        "7",
+        "0xE0E030CF"
+      ]
+    },
+    {
+      "name": "SAMSUNG_NUM_8",
+      "handler": "IR",
+      "payloads": [
+        "7",
+        "0xE0E0B04F"
+      ]
+    },
+    {
+      "name": "SAMSUNG_NUM_9",
+      "handler": "IR",
+      "payloads": [
+        "7",
+        "0xE0E0708F"
+      ]
+    },
+    {
+      "name": "SAMSUNG_NUM_0",
+      "handler": "IR",
+      "payloads": [
+        "7",
+        "0xE0E08877"
+      ]
+    },
+    {
+      "name": "SAMSUNG_CHANNEL_UP",
+      "handler": "IR",
+      "payloads": [
+        "7",
+        "0xE0E048B7"
+      ]
+    },
+    {
+      "name": "SAMSUNG_CHANNEL_DOWN",
+      "handler": "IR",
+      "payloads": [
+        "7",
+        "0xE0E008F7"
+      ]
+    },
+    {
+      "name": "SAMSUNG_MENU",
+      "handler": "IR",
+      "payloads": [
+        "7",
+        "0xE0E058A7"
+      ]
+    },
+    {
+      "name": "SAMSUNG_GUIDE",
+      "handler": "IR",
+      "payloads": [
+        "7",
+        "0xE0E0F20D"
+      ]
+    },
+    {
+      "name": "SAMSUNG_UP",
+      "handler": "IR",
+      "payloads": [
+        "7",
+        "0xE0E006F9"
+      ]
+    },
+    {
+      "name": "SAMSUNG_DOWN",
+      "handler": "IR",
+      "payloads": [
+        "7",
+        "0xE0E08679"
+      ]
+    },
+    {
+      "name": "SAMSUNG_LEFT",
+      "handler": "IR",
+      "payloads": [
+        "7",
+        "0xE0E0A659"
+      ]
+    },
+    {
+      "name": "SAMSUNG_RIGHT",
+      "handler": "IR",
+      "payloads": [
+        "7",
+        "0xE0E046B9"
+      ]
+    },
+    {
+      "name": "SAMSUNG_SELECT",
+      "handler": "IR",
+      "payloads": [
+        "7",
+        "0xE0E016E9"
+      ]
+    },
+    {
+      "name": "SAMSUNG_EXIT",
+      "handler": "IR",
+      "payloads": [
+        "7",
+        "0xE0E0B44B"
+      ]
+    },
+    {
+      "name": "SAMSUNG_REWIND",
+      "handler": "IR",
+      "payloads": [
+        "7",
+        "0xE0E0A25D"
+      ]
+    },
+    {
+      "name": "SAMSUNG_PAUSE",
+      "handler": "IR",
+      "payloads": [
+        "7",
+        "0xE0E052AD"
+      ]
+    },
+    {
+      "name": "SAMSUNG_FASTFORWARD",
+      "handler": "IR",
+      "payloads": [
+        "7",
+        "0xE0E012ED"
+      ]
+    },
+    {
+      "name": "SAMSUNG_PLAY",
+      "handler": "IR",
+      "payloads": [
+        "7",
+        "0xE0E0E21D"
+      ]
+    },
+    {
+      "name": "SAMSUNG_POWER_OFF",
+      "handler": "IR",
+      "payloads": [
+        "7",
+        "0xE0E019E6"
+      ]
+    },
+    {
+      "name": "SAMSUNG_POWER_ON",
+      "handler": "IR",
+      "payloads": [
+        "7",
+        "0xE0E09966"
+      ]
+    },
+    {
+      "name": "SAMSUNG_INPUT_HDMI_1",
+      "handler": "IR",
+      "payloads": [
+        "7",
+        "0xE0E09768"
+      ]
+    },
+    {
+      "name": "SAMSUNG_INPUT_HDMI_2",
+      "handler": "IR",
+      "payloads": [
+        "7",
+        "0xE0E07D82"
+      ]
+    },
+    {
+      "name": "SAMSUNG_INPUT_HDMI_3",
+      "handler": "IR",
+      "payloads": [
+        "7",
+        "0xE0E043BC"
+      ]
+    },
+    {
+      "name": "SAMSUNG_INPUT_TV",
+      "handler": "IR",
+      "payloads": [
+        "7",
+        "0xE0E0D827"
+      ]
+    }
+  ]
+}

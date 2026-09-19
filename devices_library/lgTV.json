@@ -1,0 +1,348 @@
+{
+  "schemaVersion": 1,
+  "type": "omote.devicePack",
+  "device": {
+    "id": "lgTV",
+    "name": "LG TV",
+    "manufacturer": "LG",
+    "model": ""
+  },
+  "commands": [
+    {
+      "name": "LGTV_POWER_OFF",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x20DFA35C"
+      ]
+    },
+    {
+      "name": "LGTV_POWER_ON",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x20DF23DC"
+      ]
+    },
+    {
+      "name": "LGTV_POWER_TOGGLE",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x20DF10EF"
+      ]
+    },
+    {
+      "name": "LGTV_SOURCE",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x20DFD02F"
+      ]
+    },
+    {
+      "name": "LGTV_NUM_1",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x20DF8877"
+      ]
+    },
+    {
+      "name": "LGTV_NUM_2",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x20DF48B7"
+      ]
+    },
+    {
+      "name": "LGTV_NUM_3",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x20DFC837"
+      ]
+    },
+    {
+      "name": "LGTV_NUM_4",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x20DF28D7"
+      ]
+    },
+    {
+      "name": "LGTV_NUM_5",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x20DFA857"
+      ]
+    },
+    {
+      "name": "LGTV_NUM_6",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x20DF6897"
+      ]
+    },
+    {
+      "name": "LGTV_NUM_7",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x20DFE817"
+      ]
+    },
+    {
+      "name": "LGTV_NUM_8",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x20DF18E7"
+      ]
+    },
+    {
+      "name": "LGTV_NUM_9",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x20DF9867"
+      ]
+    },
+    {
+      "name": "LGTV_NUM_0",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x20DF08F7"
+      ]
+    },
+    {
+      "name": "LGTV_PRECH",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x20DF5BA7"
+      ]
+    },
+    {
+      "name": "LGTV_VOL_MINUS",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x20DFC03F"
+      ]
+    },
+    {
+      "name": "LGTV_VOL_PLUS",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x20DF40BF"
+      ]
+    },
+    {
+      "name": "LGTV_MUTE_TOGGLE",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x20DF906F"
+      ]
+    },
+    {
+      "name": "LGTV_CHANNEL_UP",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x20DF00FF"
+      ]
+    },
+    {
+      "name": "LGTV_CHANNEL_DOWN",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x20DF807F"
+      ]
+    },
+    {
+      "name": "LGTV_MENU",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x20DFA25D"
+      ]
+    },
+    {
+      "name": "LGTV_GUIDE",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x20DFD52A"
+      ]
+    },
+    {
+      "name": "LGTV_SETUP",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x20DFC23D"
+      ]
+    },
+    {
+      "name": "LGTV_INFO",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x20DF55AA"
+      ]
+    },
+    {
+      "name": "LGTV_UP",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x20DF02FD"
+      ]
+    },
+    {
+      "name": "LGTV_DOWN",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x20DF827D"
+      ]
+    },
+    {
+      "name": "LGTV_LEFT",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x20DFE01F"
+      ]
+    },
+    {
+      "name": "LGTV_RIGHT",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x20DF609F"
+      ]
+    },
+    {
+      "name": "LGTV_OK",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x20DF22DD"
+      ]
+    },
+    {
+      "name": "LGTV_RETURN",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x20DF14EB"
+      ]
+    },
+    {
+      "name": "LGTV_EXIT",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x20DFDA25"
+      ]
+    },
+    {
+      "name": "LGTV_KEY_A",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x20DF4EB1"
+      ]
+    },
+    {
+      "name": "LGTV_KEY_B",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x20DF8E71"
+      ]
+    },
+    {
+      "name": "LGTV_KEY_C",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x20DFC639"
+      ]
+    },
+    {
+      "name": "LGTV_KEY_D",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x20DF8679"
+      ]
+    },
+    {
+      "name": "LGTV_INPUT_HDMI_1",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x20DF738C"
+      ]
+    },
+    {
+      "name": "LGTV_INPUT_HDMI_2",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x20DF33CC"
+      ]
+    },
+    {
+      "name": "LGTV_INPUT_HDMI_3",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x20DF9768"
+      ]
+    },
+    {
+      "name": "LGTV_INPUT_HDMI_4",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x20DF5BA4"
+      ]
+    },
+    {
+      "name": "LGTV_INPUT_TV",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x20DF6B94"
+      ]
+    },
+    {
+      "name": "LGTV_3D",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x20DF3BC4"
+      ]
+    },
+    {
+      "name": "LGTV_HOME",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x20DF3EC1"
+      ]
+    }
+  ]
+}

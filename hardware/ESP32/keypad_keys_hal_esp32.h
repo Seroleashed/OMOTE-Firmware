@@ -25,3 +25,7 @@ void keys_getKeys_HAL(void* ptr, unsigned long currentMillis);
     uint8_t get_keyboardBrightness_HAL();
     void set_keyboardBrightness_HAL(uint8_t aKeyboardBrightness);
 #endif
+// Copies the 5x5 layout of this hardware revision. Rev5 and Rev1-4 hold the
+// same keys in reversed row order, which is exactly why keys.json carries the
+// revision - see configScenes.h.
+bool get_keypadMatrix_HAL(char (*matrix)[5]);

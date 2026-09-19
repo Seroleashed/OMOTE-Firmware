@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/KlausMu/OMOTE-Firmware/schema/scenes.schema.json",
+  "title": "OMOTE scenes",
+  "description": "Scenes with their key maps and sequences. Keys and commands are referenced by name, never by id.",
+  "type": "object",
+  "required": ["schemaVersion", "type", "scenes"],
+  "properties": {
+    "schemaVersion": { "type": "integer", "minimum": 1, "maximum": 1 },
+    "type": { "const": "omote.scenes" },
+    "scenes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "activateCommand": { "type": "string" },
+          "guiList": { "type": "array", "items": { "type": "string" } },
+          "keys": {
+            "type": "object",
+            "propertyNames": { "pattern": "^KEY_[A-Z0-9]+$" },
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "repeatMode": { "enum": ["SHORT", "SHORT_REPEATED", "SHORTorLONG"] },
+                "short": { "type": "string" },
+                "long": { "type": "string" }
+              },
+              "description": "A long press command requires repeatMode SHORTorLONG - it could never fire otherwise. The firmware enforces that; expressing it here would need a conditional the readers of this file do not need.",
+              "additionalProperties": false
+            }
+          },
+          "startSequence": { "$ref": "#/$defs/sequence" },
+          "endSequence": { "$ref": "#/$defs/sequence" }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "sequence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["command"],
+        "properties": {
+          "command": { "type": "string", "minLength": 1 },
+          "payload": { "type": "string" },
+          "delayAfterMs": { "type": "integer", "minimum": 0 }
+        }
+      }
+    }
+  }
+}

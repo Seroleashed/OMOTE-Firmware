@@ -55,6 +55,15 @@ struct rawKey {
 // --
 extern rawKey rawKeys[][keypadCOLS];
 void getKeys(rawKey (*rawKeys)[keypadCOLS], unsigned long currentMillis);
+/*
+  Which key sits on which position of the matrix, as the hardware layer has it.
+  Needed to export keys.json: without this the export would need a second copy
+  of the layout, and the two would drift apart.
+
+  Returns false if this build has no matrix at all - the simulator gets its key
+  presses from an image map rather than from rows and columns.
+*/
+bool get_keypadMatrix(char (*matrix)[keypadCOLS]);
 #if(OMOTE_HARDWARE_REV >= 5)
 void update_keyboardBrightness(void);
 uint8_t get_keyboardBrightness();

@@ -61,7 +61,12 @@ void setKeysForAllRegisteredGUIsAndScenes() {
   register_scene_defaultKeys();
   // 2. loop over all registered scenes and call setKeys()
   for (std::map<std::string, scene_definition>::iterator it = registered_scenes.begin(); it != registered_scenes.end(); ++it) {
-    it->second.this_scene_setKeys();
+    // A scene may be registered without a setKeys function - a scene that only
+    // runs a start sequence needs no key map at all. The gui loop below has
+    // always checked for that; this one crashed instead.
+    if (it->second.this_scene_setKeys != NULL) {
+      it->second.this_scene_setKeys();
+    }
   }
   // 3. loop over all registered guis and call setKeys()
   for (std::map<std::string, gui_definition>::iterator it = registered_guis_byName_map.begin(); it != registered_guis_byName_map.end(); ++it) {

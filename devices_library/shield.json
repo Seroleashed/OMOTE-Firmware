@@ -1,0 +1,116 @@
+{
+  "schemaVersion": 1,
+  "type": "omote.devicePack",
+  "device": {
+    "id": "shield",
+    "name": "NVIDIA Shield",
+    "manufacturer": "NVIDIA",
+    "model": ""
+  },
+  "commands": [
+    {
+      "name": "SHIELD_POWER_TOGGLE",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x017E609F"
+      ]
+    },
+    {
+      "name": "SHIELD_MENU",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x017E906F"
+      ]
+    },
+    {
+      "name": "SHIELD_EXIT",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x017E40BF"
+      ]
+    },
+    {
+      "name": "SHIELD_STOP",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x017EE01F"
+      ]
+    },
+    {
+      "name": "SHIELD_PLAY",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x017E8877"
+      ]
+    },
+    {
+      "name": "SHIELD_FORWARD",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x017EF00F"
+      ]
+    },
+    {
+      "name": "SHIELD_REVERSE",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x017E50AF"
+      ]
+    },
+    {
+      "name": "SHIELD_UP",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x017E30CF"
+      ]
+    },
+    {
+      "name": "SHIELD_DOWN",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x017E708F"
+      ]
+    },
+    {
+      "name": "SHIELD_LEFT",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x017ED02F"
+      ]
+    },
+    {
+      "name": "SHIELD_RIGHT",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x017EB04F"
+      ]
+    },
+    {
+      "name": "SHIELD_OK",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x017EC03F"
+      ]
+    },
+    {
+      "name": "SHIELD_SHIELD",
+      "handler": "IR",
+      "payloads": [
+        "3",
+        "0x017E847B"
+      ]
+    }
+  ]
+}
