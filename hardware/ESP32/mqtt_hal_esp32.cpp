@@ -6,11 +6,57 @@
 #include "keyboard_ble_hal_esp32.h"
 #endif
 #include "secrets.h"
+#include "applicationInternal/credentials.h"
+#include "applicationInternal/omote_log.h"
 
 #if (ENABLE_WIFI_AND_MQTT == 1)
 WiFiClient espClient;
 PubSubClient mqttClient(espClient);
 bool isWifiConnected = false;
+
+/*
+  Without credentials there is nothing to connect to, and with wrong ones there
+  never will be. Either way the remote has to become reachable somehow, or a
+  mistyped password can only be fixed with a USB cable.
+
+  The access point is deliberately dumb for now: it comes up, it says so in the
+  log, and that is it. Step 17 gives it the display PIN and step 18 puts a web
+  server behind it. What matters here is that the path exists and is taken at
+  the right moment.
+*/
+static bool accessPointActive = false;
+
+static void startAccessPoint() {
+  if (accessPointActive) return;
+
+  std::string ssid = "OMOTE-setup";
+  // Derived from the MAC, so it is stable for a given remote and can be printed
+  // on a label - and it is not the same on every OMOTE in the world, which a
+  // hard coded one would be. The PIN from step 17 replaces this.
+  uint64_t mac = ESP.getEfuseMac();
+  char password[9];
+  snprintf(password, sizeof(password), "%08x", (unsigned int)(mac & 0xFFFFFFFF));
+
+  WiFi.mode(WIFI_AP);
+  if (!WiFi.softAP(ssid.c_str(), password)) {
+    omote_log_e("wifi: could not start the access point\r\n");
+    return;
+  }
+  accessPointActive = true;
+  omote_log_i("wifi: access point '%s' is up, password '%s', address %s\r\n", ssid.c_str(), password,
+              WiFi.softAPIP().toString().c_str());
+  omote_log_i("wifi: %s\r\n", credentials::statusText().c_str());
+}
+
+// Connects with whatever credentials apply, or brings up the access point if
+// there is nothing left to try.
+static void connectWifiOrStartAccessPoint() {
+  if (credentials::shouldStartAccessPoint()) {
+    startAccessPoint();
+    return;
+  }
+  WiFi.begin(credentials::wifiSsid().c_str(), credentials::wifiPasswordForConnecting().c_str());
+}
 
 tAnnounceWiFiconnected_cb thisAnnounceWiFiconnected_cb = NULL;
 void set_announceWiFiconnected_cb_HAL(tAnnounceWiFiconnected_cb pAnnounceWiFiconnected_cb) {
@@ -39,15 +85,20 @@ void WiFiEvent(WiFiEvent_t event){
   // Set status bar icon based on WiFi status
   if (event == ARDUINO_EVENT_WIFI_STA_GOT_IP || event == ARDUINO_EVENT_WIFI_STA_GOT_IP6) {
     isWifiConnected = true;
+    // this attempt worked, so the ones before it no longer count towards the
+    // access point
+    credentials::reportConnected();
     thisAnnounceWiFiconnected_cb(true);
     Serial.printf("WiFi connected, IP address: %s\r\n", WiFi.localIP().toString().c_str());
 
   } else if (event == ARDUINO_EVENT_WIFI_STA_DISCONNECTED) {
     isWifiConnected = false;
     thisAnnounceWiFiconnected_cb(false);
-    // automatically try to reconnect
-    Serial.printf("WiFi got disconnected. Will try to reconnect.\r\n");
-    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+    // Three failures in a row and the access point takes over. Not one: a
+    // router rebooting, or a remote switched on before the access point is up,
+    // must not throw the user into a configuration mode they did not ask for.
+    credentials::reportConnectFailed();
+    connectWifiOrStartAccessPoint();
 
   } else {
     // e.g. ARDUINO_EVENT_WIFI_STA_CONNECTED or many others
@@ -62,7 +113,7 @@ void init_mqtt_HAL(void) {
   // Setup WiFi
   WiFi.setHostname("OMOTE"); //define hostname
   WiFi.onEvent(WiFiEvent);
-  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  connectWifiOrStartAccessPoint();
   WiFi.setSleep(true);
 }
 
@@ -160,7 +211,8 @@ bool checkMQTTconnection() {
       mqttClient.setServer(MQTT_SERVER, MQTT_SERVER_PORT); // MQTT initialization
       
       std::string mqttClientName = std::string(MQTT_CLIENTNAME) + "_esp32_" + std::string(WiFi.macAddress().c_str());
-      if (mqttClient.connect(mqttClientName.c_str(), MQTT_USER, MQTT_PASS)) {
+      if (mqttClient.connect(mqttClientName.c_str(), credentials::mqttUser().c_str(),
+                             credentials::mqttPasswordForConnecting().c_str())) {
         Serial.printf("  Successfully connected to MQTT broker\r\n");
     
         mqtt_subscribeTopics();

@@ -7,6 +7,7 @@
 #include "applicationInternal/hardware/firmwareImage.h"
 #include "applicationInternal/firmwareInfo.h"
 #include "applicationInternal/bootGuard.h"
+#include "applicationInternal/credentials.h"
 #include "applicationInternal/storage/configStorage.h"
 #include "applicationInternal/storage/configLoader.h"
 // register devices and their commands
@@ -88,6 +89,9 @@ int main(int argc, char *argv[]) {
   // Count this boot attempt. Has to happen before anything reads a stored
   // configuration, because that is what it protects against.
   bootGuard::begin(get_bootCounterStorage());
+  // WiFi and MQTT logins live in NVS, never in the configuration files - those
+  // get exported and shared. secrets.h stays the compile time default.
+  credentials::begin(get_credentialStorage());
   // do some general hardware setup, like powering the TFT, I2C, ...
   init_hardware_general();
   // get wakeup reason
