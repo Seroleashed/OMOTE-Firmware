@@ -65,6 +65,7 @@ springt die Prozentzahl dort, obwohl die Firmware kaum wächst.
 | `feature/07` Export | 2.008.613 (63,9 %) | 101.052 | 1.905.317 (36,3 %) | 63.760 |
 | `feature/08` JSON-Loader | 2.010.097 (63,9 %) | 101.068 | 1.906.833 (36,4 %) | 63.784 |
 | `feature/09` Sequenz-Engine | 2.015.453 (64,1 %) | 101.116 | 1.912.289 (36,5 %) | 63.832 |
+| `feature/10` Zugangsdaten | 2.021.457 (64,3 %) | 101.132 | 1.918.453 (36,6 %) | 63.864 |
 
 ⚠️ Schritt 7 kostet **20,6 KB Flash** — der größte Sprung seit Phase 0. Grund ist der
 Serial-Dump im Settings-Screen: er zieht `configExport` samt Serialisierung aller vier
@@ -100,7 +101,7 @@ eingeschaltetem „Show mem usage").
 | 7 | Export des einkompilierten Zustands | 1 | ✅ getestet | `feature/07-config-export` |
 | 8 | Geräte und Befehle aus JSON registrieren | 1 | ✅ getestet, im Simulator verifiziert | `feature/08-json-device-loader` |
 | 9 | Sequenz-Engine für Szenen | 1 | ✅ getestet | `feature/09-sequence-engine` |
-| 10 | Zugangsdaten im NVS | 1 | ⬜ offen | |
+| 10 | Zugangsdaten im NVS | 1 | ✅ getestet | `feature/10-credentials-nvs` |
 | 11 | Transport-Abstraktion | 2 | ⬜ offen | |
 | 12 | USB-Transport plus Host-Werkzeug | 2 | ⬜ offen | |
 | 13 | BLE-Transport | 2 | ⬜ offen | |
@@ -122,7 +123,7 @@ eingeschaltetem „Show mem usage").
 
 Legende: ⬜ offen · 🟡 teilweise · ✅ Tests und alle Builds grün
 
-> **Stand der Prüfung:** `pio test -e native_test` (174 Fälle) und `pio run` für
+> **Stand der Prüfung:** `pio test -e native_test` (191 Fälle) und `pio run` für
 > `esp32-Rev1toRev4`, `esp32-s3-Rev5andHigher`, beide Testboard-Environments und
 > `linux_64bit` laufen auf jedem Branch durch.
 >
@@ -139,6 +140,7 @@ Legende: ⬜ offen · 🟡 teilweise · ✅ Tests und alle Builds grün
 > | 4b | Safe-Mode nach drei abgewürgten Starts |
 > | 8 | Freier Heap mit 10 aus JSON geladenen Geräten |
 > | 9 | Display baut sich während einer laufenden Szene weiter auf |
+> | 10 | AP `OMOTE-setup` kommt hoch, NVS überlebt einen Neustart |
 > | — | freier Heap nach Boot, größter Block (Budget-Tabelle) |
 >
 > **Ersatz, solange keine Hardware da ist:** `linux_64bit` ist der einzige Build, der
@@ -523,15 +525,37 @@ Ein Konstruktor löst es für beide.
 reagiert. Der Test `test_the_loop_is_never_blocked` zeigt es rechnerisch — dass sich das
 Display dabei wirklich weiter aufbaut, sieht nur jemand mit dem Gerät.
 
-## Schritt 10 — Zugangsdaten im NVS ⬜
+## Schritt 10 — Zugangsdaten im NVS ✅
 
-- [ ] `src/secrets.h` bleibt als Kompilier-Default
-- [ ] Setzen und Löschen von WLAN-/MQTT-Zugangsdaten im NVS (API kommt in Schritt 18)
-- [ ] Reihenfolge: NVS gewinnt über `secrets.h`
-- [ ] AP-Modus-Fallback, wenn keine WLAN-Daten vorhanden sind **oder** die Verbindung
-      dreimal scheitert
-- [ ] Passwörter werden nie zurückgelesen, nur gesetzt oder gelöscht
-- [ ] Test: Fallback-Kette NVS → `secrets.h` → AP-Modus
+- [x] `src/secrets.h` bleibt als Kompilier-Default und wird nie weggenommen
+- [x] Setzen und Löschen von WLAN-/MQTT-Zugangsdaten im NVS
+- [x] Reihenfolge: NVS → `secrets.h` → nichts
+- [x] „Nichts" schließt die **Platzhalter** ein, mit denen `secrets.h` ausgeliefert
+      wird. Sonst verbringt eine frische OMOTE drei Fehlversuche damit, einem Netz
+      namens „YourWifiSSID" beizutreten, bevor sie irgendeinen Weg zur Korrektur anbietet
+- [x] AP-Modus nach **drei** Fehlversuchen, nicht einem — ein neu startender Router
+      darf niemanden in einen Konfigurationsmodus werfen. Neue Zugangsdaten setzen den
+      Zähler zurück
+- [x] `mqtt_hal_esp32` liest die `secrets.h`-Makros nicht mehr direkt
+- [x] 17 Tests
+
+**Passwörter.** Sie *können* gelesen werden — sonst ließe sich nicht verbinden. Aber
+die Funktionen heißen `passwordForConnecting()`. Wenn eine davon in Schritt 18 in der
+Web-API auftaucht, soll der Name den Prüfer stolpern lassen. Die UI bekommt
+`hasWifiPassword()`, mehr braucht sie nicht. Zwei Tests halten fest, dass der
+Statustext nie ein Passwort enthält und dass `clearWifi()` nichts liegen lässt.
+
+**Offenes Netz und Broker ohne Login sind gültige Konfigurationen**, nicht „noch nichts
+gespeichert". Beide haben einen Test, weil das Verwechseln der naheliegende Fehler ist.
+
+**Der Access Point ist bewusst dumm:** er kommt hoch und sagt es im Log. Schritt 17 gibt
+ihm die Display-PIN, Schritt 18 stellt einen Webserver dahinter. Jetzt zählt nur, dass
+der Pfad existiert und zum richtigen Zeitpunkt genommen wird.
+
+**Noch offen:** `system.json` wird von niemandem geladen. Das Modell steht seit
+Schritt 6, aber `configLoader` liest nur Geräte. Die Datei anzuwenden heißt, Helligkeit,
+Sleep-Timeout und MQTT-Broker in die Preferences zu schreiben — ein eigener kleiner
+Schritt, der vor Schritt 18 fällig ist.
 
 ---
 
