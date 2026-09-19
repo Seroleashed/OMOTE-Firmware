@@ -1,6 +1,15 @@
 #ifndef __OMOTE_LOG_H__
 #define __OMOTE_LOG_H__
 
+// The macros below expand to Serial.printf() and millis(). Both used to have to
+// be in scope already at the point of inclusion, which happened to be true for
+// every file that included hardwarePresenter.h first. A file that only wants to
+// log failed to compile - and only in builds where the log level is high enough
+// to expand the macros, so the unit tests (log level NONE) stayed green while
+// the firmware build broke. Including the arduino layer here makes this header
+// stand on its own.
+#include "applicationInternal/hardware/arduinoLayer.h"
+
 #ifdef __cplusplus
 extern "C"
 {
