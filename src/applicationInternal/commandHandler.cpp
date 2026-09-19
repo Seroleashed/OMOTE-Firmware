@@ -58,16 +58,66 @@ uint16_t KEYBOARD_VOLUME_INCREMENT          ; //PPCAT(KEYBOARD_PREFIX, VOLUME_IN
 uint16_t KEYBOARD_VOLUME_DECREMENT          ; //PPCAT(KEYBOARD_PREFIX, VOLUME_DECREMENT)
 
 std::map<uint16_t, commandData> commands;
+// stable name <-> volatile id. The name is what a stored configuration uses.
+std::map<uint16_t, std::string> commandNames_byID;
+std::map<std::string, uint16_t> commandIDs_byName;
 
 uint16_t uniqueCommandID = 0;
 
+// The macro passes the stringified pointer expression, so "&SAMSUNG_POWER"
+// arrives here and becomes "SAMSUNG_POWER".
+static std::string cleanupCommandName(std::string commandName) {
+  while (!commandName.empty() && (commandName[0] == '&' || commandName[0] == ' ')) {
+    commandName.erase(0, 1);
+  }
+  while (!commandName.empty() && commandName[commandName.size() - 1] == ' ') {
+    commandName.erase(commandName.size() - 1);
+  }
+  return commandName;
+}
+
 // register a command and give it a command id
-void register_command(uint16_t *command, commandData aCommandData) {
+void register_command_withName(uint16_t *command, commandData aCommandData, std::string commandName) {
   *command = uniqueCommandID;
   uniqueCommandID++;
 
   commands[*command] = aCommandData;
+
+  commandName = cleanupCommandName(commandName);
+  if (commandName.empty()) return;
+
+  if (commandIDs_byName.count(commandName) > 0) {
+    // A name must never be ambiguous, so the newest registration takes it over
+    // and the previous command loses its name. This is what happens when a
+    // device is re-registered from a JSON file at runtime: the new definition
+    // replaces the old one, and the old command id simply becomes unreachable
+    // by name.
+    omote_log_w("command: name '%s' is re-registered, it now points to the new command\r\n",
+                commandName.c_str());
+    commandNames_byID.erase(commandIDs_byName.at(commandName));
+  }
+  commandNames_byID[*command] = commandName;
+  commandIDs_byName[commandName] = *command;
 }
+
+uint16_t get_commandID_byName(const std::string &commandName) {
+  if (commandIDs_byName.count(commandName) > 0) return commandIDs_byName.at(commandName);
+  return COMMAND_UNKNOWN;
+}
+
+std::string get_commandName_byID(uint16_t command) {
+  if (commandNames_byID.count(command) > 0) return commandNames_byID.at(command);
+  return "";
+}
+
+bool get_commandData_byID(uint16_t command, commandData &aCommandData) {
+  if (commands.count(command) == 0) return false;
+  aCommandData = commands.at(command);
+  return true;
+}
+
+const std::map<uint16_t, commandData> &get_all_commands() { return commands; }
+const std::map<uint16_t, std::string> &get_all_commandNames() { return commandNames_byID; }
 // only get a unique ID. used by KEYBOARD_DUMMY and COMMAND_UNKNOWN
 void get_uniqueCommandID(uint16_t *command) {
   *command = uniqueCommandID;

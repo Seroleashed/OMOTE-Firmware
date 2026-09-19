@@ -109,10 +109,38 @@ struct commandData {
   std::list<std::string> commandPayloads;
 };
 
-// register a command and give it a command id
-void register_command(uint16_t *command, commandData aCommandData);
+/*
+  Registering a command.
+
+  The numeric command id is handed out in registration order, so it changes as
+  soon as a device is added, removed or moved. A stored configuration must
+  therefore never refer to that number - it refers to the command *name*.
+
+  register_command() is a macro that turns the variable name of the command
+  into that stable name, so none of the existing call sites has to change:
+
+      register_command(&SAMSUNG_POWER, makeCommandData(IR, {...}));
+      -> name "SAMSUNG_POWER"
+
+  Use register_command_withName() where the name has to differ from the
+  variable, for example for commands created at runtime from a JSON file.
+*/
+void register_command_withName(uint16_t *command, commandData aCommandData, std::string commandName);
+#define register_command(commandPtr, aCommandData) \
+  register_command_withName(commandPtr, aCommandData, #commandPtr)
+
 // only get a unique ID. used by KEYBOARD_DUMMY and COMMAND_UNKNOWN
 void get_uniqueCommandID(uint16_t *command);
+
+// --- lookup by name, used by the JSON configuration and the web UI ----------
+// returns COMMAND_UNKNOWN if the name is not registered
+uint16_t get_commandID_byName(const std::string &commandName);
+// returns an empty string if the id is not registered
+std::string get_commandName_byID(uint16_t command);
+bool get_commandData_byID(uint16_t command, commandData &aCommandData);
+// every registered command, ordered by id. Used to export the configuration.
+const std::map<uint16_t, commandData> &get_all_commands();
+const std::map<uint16_t, std::string> &get_all_commandNames();
 
 void register_keyboardCommands();
 commandData makeCommandData(commandHandlers a, std::list<std::string> b);

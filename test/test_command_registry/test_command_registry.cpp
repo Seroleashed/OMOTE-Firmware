@@ -10,6 +10,7 @@
 
 #include <string>
 #include <list>
+#include <map>
 
 #include "applicationInternal/commandHandler.h"
 #include "applicationInternal/hardware/IRremoteProtocols.h"
@@ -93,6 +94,68 @@ void test_unknown_command_is_ignored_without_crash(void) {
   TEST_ASSERT_EQUAL_size_t(0, fakes::sceneCalls.size());
 }
 
+// --- stable names -----------------------------------------------------------
+
+void test_command_can_be_found_by_its_variable_name(void) {
+  // the register_command macro uses the variable name, so no call site had to
+  // be touched when names were introduced
+  TEST_ASSERT_EQUAL_UINT16(CMD_IR_SAMSUNG_POWER, get_commandID_byName("CMD_IR_SAMSUNG_POWER"));
+  TEST_ASSERT_EQUAL_STRING("CMD_MQTT_BULB", get_commandName_byID(CMD_MQTT_BULB).c_str());
+}
+
+void test_unknown_name_returns_command_unknown(void) {
+  TEST_ASSERT_EQUAL_UINT16(COMMAND_UNKNOWN, get_commandID_byName("DOES_NOT_EXIST"));
+  TEST_ASSERT_EQUAL_STRING("", get_commandName_byID(60000).c_str());
+}
+
+void test_explicit_name_is_used_when_given(void) {
+  uint16_t runtimeCommand = 0;
+  register_command_withName(&runtimeCommand, makeCommandData(IR, {"7", "0xAB"}),
+                            "livingroom.tv.power");
+
+  TEST_ASSERT_EQUAL_UINT16(runtimeCommand, get_commandID_byName("livingroom.tv.power"));
+  TEST_ASSERT_EQUAL_STRING("livingroom.tv.power", get_commandName_byID(runtimeCommand).c_str());
+}
+
+void test_re_registering_a_name_points_it_at_the_new_command(void) {
+  // this is what happens when a device is replaced by a JSON definition at
+  // runtime: the newest registration owns the name
+  uint16_t first = 0, second = 0;
+  register_command_withName(&first, makeCommandData(IR, {"7", "0x01"}), "duplicate.name");
+  register_command_withName(&second, makeCommandData(IR, {"7", "0x02"}), "duplicate.name");
+
+  TEST_ASSERT_NOT_EQUAL(first, second);
+  TEST_ASSERT_EQUAL_UINT16(second, get_commandID_byName("duplicate.name"));
+  // the old command keeps working but is no longer reachable by name
+  TEST_ASSERT_EQUAL_STRING("", get_commandName_byID(first).c_str());
+  executeCommand(first);
+  TEST_ASSERT_EQUAL_STRING("0x01", fakes::irSends.back().payloads.front().c_str());
+}
+
+void test_command_ids_are_not_stable_but_names_are(void) {
+  // this is the reason the configuration must not store numeric ids:
+  // registering anything before a command shifts its id
+  uint16_t early = 0, late = 0;
+  register_command_withName(&early, makeCommandData(IR, {"7", "0x10"}), "order.first");
+  register_command_withName(&late, makeCommandData(IR, {"7", "0x11"}), "order.second");
+  TEST_ASSERT_TRUE(late > early);
+  TEST_ASSERT_EQUAL_UINT16(early, get_commandID_byName("order.first"));
+}
+
+void test_all_commands_can_be_iterated_for_export(void) {
+  const std::map<uint16_t, commandData> &all = get_all_commands();
+  const std::map<uint16_t, std::string> &names = get_all_commandNames();
+
+  TEST_ASSERT_TRUE(all.count(CMD_IR_SAMSUNG_POWER) > 0);
+  TEST_ASSERT_EQUAL(IR, all.at(CMD_IR_SAMSUNG_POWER).commandHandler);
+  TEST_ASSERT_EQUAL_STRING("CMD_SCENE_TV", names.at(CMD_SCENE_TV).c_str());
+
+  commandData found;
+  TEST_ASSERT_TRUE(get_commandData_byID(CMD_MQTT_BULB, found));
+  TEST_ASSERT_EQUAL_STRING("bulb1_set", found.commandPayloads.front().c_str());
+  TEST_ASSERT_FALSE(get_commandData_byID(60000, found));
+}
+
 void test_received_ir_message_is_forwarded_to_gui(void) {
   receiveNewIRmessage_cb("SAMSUNG E0E040BF");
 
@@ -111,6 +174,12 @@ int main(int argc, char **argv) {
   RUN_TEST(test_mqtt_command_additional_payload_wins);
   RUN_TEST(test_scene_and_gui_commands_are_delegated);
   RUN_TEST(test_unknown_command_is_ignored_without_crash);
+  RUN_TEST(test_command_can_be_found_by_its_variable_name);
+  RUN_TEST(test_unknown_name_returns_command_unknown);
+  RUN_TEST(test_explicit_name_is_used_when_given);
+  RUN_TEST(test_re_registering_a_name_points_it_at_the_new_command);
+  RUN_TEST(test_command_ids_are_not_stable_but_names_are);
+  RUN_TEST(test_all_commands_can_be_iterated_for_export);
   RUN_TEST(test_received_ir_message_is_forwarded_to_gui);
   return UNITY_END();
 }
