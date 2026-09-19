@@ -64,6 +64,7 @@ springt die Prozentzahl dort, obwohl die Firmware kaum wächst.
 | `feature/06` scenes+keys | 1.987.941 (63,2 %) | 101.012 | 1.884.713 (35,9 %) | 63.736 |
 | `feature/07` Export | 2.008.613 (63,9 %) | 101.052 | 1.905.317 (36,3 %) | 63.760 |
 | `feature/08` JSON-Loader | 2.010.097 (63,9 %) | 101.068 | 1.906.833 (36,4 %) | 63.784 |
+| `feature/09` Sequenz-Engine | 2.015.453 (64,1 %) | 101.116 | 1.912.289 (36,5 %) | 63.832 |
 
 ⚠️ Schritt 7 kostet **20,6 KB Flash** — der größte Sprung seit Phase 0. Grund ist der
 Serial-Dump im Settings-Screen: er zieht `configExport` samt Serialisierung aller vier
@@ -98,7 +99,7 @@ eingeschaltetem „Show mem usage").
 | 6 | Schema und Dateiaufteilung | 1 | ✅ getestet (ui.json → Schritt 15) | `feature/05` + `feature/06-scenes-and-keys` |
 | 7 | Export des einkompilierten Zustands | 1 | ✅ getestet | `feature/07-config-export` |
 | 8 | Geräte und Befehle aus JSON registrieren | 1 | ✅ getestet, im Simulator verifiziert | `feature/08-json-device-loader` |
-| 9 | Sequenz-Engine für Szenen | 1 | ⬜ offen | |
+| 9 | Sequenz-Engine für Szenen | 1 | ✅ getestet | `feature/09-sequence-engine` |
 | 10 | Zugangsdaten im NVS | 1 | ⬜ offen | |
 | 11 | Transport-Abstraktion | 2 | ⬜ offen | |
 | 12 | USB-Transport plus Host-Werkzeug | 2 | ⬜ offen | |
@@ -121,7 +122,7 @@ eingeschaltetem „Show mem usage").
 
 Legende: ⬜ offen · 🟡 teilweise · ✅ Tests und alle Builds grün
 
-> **Stand der Prüfung:** `pio test -e native_test` (158 Fälle) und `pio run` für
+> **Stand der Prüfung:** `pio test -e native_test` (174 Fälle) und `pio run` für
 > `esp32-Rev1toRev4`, `esp32-s3-Rev5andHigher`, beide Testboard-Environments und
 > `linux_64bit` laufen auf jedem Branch durch.
 >
@@ -136,6 +137,8 @@ Legende: ⬜ offen · 🟡 teilweise · ✅ Tests und alle Builds grün
 > | 4 | LittleFS mounten und beim ersten Start formatieren |
 > | 3b | `Image: app0 (valid)` im Settings-Screen, `mark_app_valid` |
 > | 4b | Safe-Mode nach drei abgewürgten Starts |
+> | 8 | Freier Heap mit 10 aus JSON geladenen Geräten |
+> | 9 | Display baut sich während einer laufenden Szene weiter auf |
 > | — | freier Heap nach Boot, größter Block (Budget-Tabelle) |
 >
 > **Ersatz, solange keine Hardware da ist:** `linux_64bit` ist der einzige Build, der
@@ -485,17 +488,40 @@ nach wie vor, mit Warnung. Aus 38 Warnungen beim Boot wurden 0.
 **Noch offen:** Speichermessung mit 10 geladenen Geräten. Sinnvoll erst auf Hardware,
 weil es um freien Heap geht, nicht um Flash.
 
-## Schritt 9 — Sequenz-Engine für Szenen ⬜
+## Schritt 9 — Sequenz-Engine für Szenen ✅
 
 **Ziel:** `delay()` raus aus den Szenen — derselbe Kern, den Schritt 24 für Makros erweitert.
 
-- [ ] `scene_start_sequence_*` wird zur Datenstruktur: Liste aus
-      `{command, payload, delayAfter}`
-- [ ] Engine läuft nicht-blockierend über die Hauptschleife
-- [ ] Bestehende Szenen (`scene_TV`, `scene_appleTV`, `scene_chromecast`, `scene_fireTV`,
-      `scene_allOff`) auf die Engine umgestellt — Timing bleibt identisch
-- [ ] Tests mit simulierter Uhr: Ablauf, Abbruch, Verschachtelung
-- [ ] Manuell verifiziert: UI friert während einer Szene nicht mehr ein
+- [x] Sequenz ist Datenstruktur: `{command, payload, delayAfter}` — genau das, was
+      `scenes.json` seit Schritt 6 speichert
+- [x] Engine läuft nicht-blockierend über die Hauptschleife
+- [x] Alle fünf Szenen umgestellt, kein `delay()` mehr in `src/scenes/`
+- [x] Timing identisch zur `delay()`-Fassung
+- [x] Tests mit vom Test gesteuerter Uhr: Ablauf, Reihenfolge, Abbruch, Anhängen,
+      Auflösung über Befehlsnamen, unbekannter Befehl, `millis()`-Überlauf
+
+**Eine Entscheidung, die nicht offensichtlich ist:** `enqueue()` **hängt an**, statt zu
+ersetzen. Beim Szenenwechsel läuft erst die End-Sequenz der alten, dann die
+Start-Sequenz der neuen Szene — mit `delay()` war das garantiert. Hätte ich „neu
+ersetzt alt" gebaut, wäre `scene_allOff` mitten im Ausschalten abgeschnitten worden und
+die Geräte blieben an. Ein *neuer* Szenenwechsel verwirft dagegen sehr wohl, was noch
+aussteht: `sceneHandler` ruft vorher `abort()`.
+
+**Lücke aus Schritt 7 geschlossen:** Die Szenen-Sequenzen sind jetzt exportierbar. Sie
+sind weiterhin C++-Funktionen, tun aber nur noch eines — Schritte einreihen. Der Export
+lässt sie in eine leere Warteschlange einreihen und nimmt das Ergebnis ab, ohne
+`loop()` aufzurufen. Ein Test hält fest, dass beim Exportieren **kein einziger
+IR-Befehl** am Fernseher landet.
+
+**Nochmal in dieselbe Falle getappt** wie bei `omote_log.h`: `Step` hatte
+Default-Initialisierer und war damit unter dem Standard des Arduino-Cores kein
+Aggregat — die geklammerten Sequenzen in den Szenen kompilierten nicht. Die Unit-Tests
+bauen mit `gnu++17`, wo es funktioniert. 174 Tests grün, Firmware unkompilierbar.
+Ein Konstruktor löst es für beide.
+
+**Noch offen:** Auf echter Hardware sehen, dass die Oberfläche während einer Szene
+reagiert. Der Test `test_the_loop_is_never_blocked` zeigt es rechnerisch — dass sich das
+Display dabei wirklich weiter aufbaut, sieht nur jemand mit dem Gerät.
 
 ## Schritt 10 — Zugangsdaten im NVS ⬜
 
