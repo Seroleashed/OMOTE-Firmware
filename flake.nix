@@ -57,6 +57,14 @@
               pkgs.libusb1
               pkgs.ncurses5
             ]}"
+            # The SDL2 simulator: platformio.ini includes <SDL2/SDL.h>, which the
+            # nix compiler wrapper finds. SDL_image.h however does a plain
+            # #include "SDL.h", and for that the .../include/SDL2 directory has
+            # to be on the include path too - the wrapper only adds
+            # .../include. pkg-config knows both, so ask it instead of hard
+            # coding store paths.
+            export NIX_CFLAGS_COMPILE="$(pkg-config --cflags-only-I sdl2 SDL2_image) $NIX_CFLAGS_COMPILE"
+
             echo "OMOTE dev shell"
             echo "  pio test -e native_test     # unit tests, no hardware needed"
             echo "  pio run  -e linux_64bit     # LVGL simulator (SDL2 window)"
