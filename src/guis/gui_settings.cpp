@@ -2,6 +2,7 @@
 #include "applicationInternal/hardware/hardwarePresenter.h"
 #include "applicationInternal/hardware/firmwareImage.h"
 #include "applicationInternal/firmwareInfo.h"
+#include "applicationInternal/bootGuard.h"
 #include "applicationInternal/memoryUsage.h"
 #include "applicationInternal/gui/guiBase.h"
 #include "applicationInternal/gui/guiRegistry.h"
@@ -76,6 +77,16 @@ static void motion_threshold_event_cb(lv_event_t* e){
 // show memory usage event handler
 static void showMemoryUsage_event_cb(lv_event_t* e) {
   setShowMemoryUsage(lv_obj_has_state(lv_event_get_target(e), LV_STATE_CHECKED));
+}
+
+// safe mode event handler. Only arms the flag, it does not restart: the user
+// decides when to switch the remote off and on again.
+static void safeMode_event_cb(lv_event_t* e) {
+  if (lv_obj_has_state(lv_event_get_target(e), LV_STATE_CHECKED)) {
+    bootGuard::requestSafeModeOnNextBoot();
+  } else {
+    bootGuard::cancelSafeModeOnNextBoot();
+  }
 }
 
 void create_tab_content_settings(lv_obj_t* tab) {
@@ -283,7 +294,7 @@ void create_tab_content_settings(lv_obj_t* tab) {
   menuLabel = lv_label_create(tab);
   lv_label_set_text(menuLabel, "Firmware");
   menuBox = lv_obj_create(tab);
-  lv_obj_set_size(menuBox, lv_pct(100), 77);
+  lv_obj_set_size(menuBox, lv_pct(100), 133);
   lv_obj_set_style_bg_color(menuBox, color_primary, LV_PART_MAIN);
   lv_obj_set_style_border_width(menuBox, 0, LV_PART_MAIN);
 
@@ -298,6 +309,21 @@ void create_tab_content_settings(lv_obj_t* tab) {
   lv_label_set_text(menuLabel, ("Image:   " + firmwareImage.runningPartition + " (" +
                                 firmwareBootStateToString(firmwareImage.state) + ")").c_str());
   lv_obj_align(menuLabel, LV_ALIGN_TOP_LEFT, 0, 48);
+  // how this boot came up, and how to force the rescue path at the next start
+  menuLabel = lv_label_create(menuBox);
+  lv_label_set_text(menuLabel, ("Config:  " + bootGuard::statusText()).c_str());
+  lv_obj_align(menuLabel, LV_ALIGN_TOP_LEFT, 0, 72);
+  menuLabel = lv_label_create(menuBox);
+  lv_label_set_text(menuLabel, "Safe mode next start");
+  lv_obj_align(menuLabel, LV_ALIGN_TOP_LEFT, 0, 99);
+  lv_obj_t* safeModeToggle = lv_switch_create(menuBox);
+  lv_obj_set_size(safeModeToggle, 40, 22);
+  lv_obj_align(safeModeToggle, LV_ALIGN_TOP_RIGHT, 0, 96);
+  lv_obj_set_style_bg_color(safeModeToggle, lv_color_hex(0x505050), LV_PART_MAIN);
+  lv_obj_add_event_cb(safeModeToggle, safeMode_event_cb, LV_EVENT_VALUE_CHANGED, NULL);
+  if (bootGuard::isSafeModeRequestedForNextBoot()) {
+    lv_obj_add_state(safeModeToggle, LV_STATE_CHECKED);
+  }
 }
 
 void notify_tab_before_delete_settings(void) {

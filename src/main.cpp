@@ -6,6 +6,7 @@
 #include "applicationInternal/hardware/hardwarePresenter.h"
 #include "applicationInternal/hardware/firmwareImage.h"
 #include "applicationInternal/firmwareInfo.h"
+#include "applicationInternal/bootGuard.h"
 #include "applicationInternal/storage/configStorage.h"
 // register devices and their commands
 //   special
@@ -82,6 +83,9 @@ int main(int argc, char *argv[]) {
                 firmwareBootStateToString(firmwareImage.state).c_str(),
                 firmwareImage.otaCapable ? ", OTA capable" : "");
   }
+  // Count this boot attempt. Has to happen before anything reads a stored
+  // configuration, because that is what it protects against.
+  bootGuard::begin(get_bootCounterStorage());
   // do some general hardware setup, like powering the TFT, I2C, ...
   init_hardware_general();
   // get wakeup reason
@@ -194,6 +198,9 @@ int main(int argc, char *argv[]) {
   // self test an update has to pass. Only now the image is confirmed - if we
   // never get here, the bootloader starts the previous one again.
   confirm_firmwareIsWorking();
+  // Same idea one level up: this boot reached the end, so the configuration it
+  // used cannot be the one that keeps the device from starting.
+  bootGuard::markBootSuccessful();
 
   #if defined(WIN32) || defined(__linux__) || defined(__APPLE__)
   // In Windows/Linux there is no loop function that is automatically being called. So we have to do this on our own infinitely here in main()
