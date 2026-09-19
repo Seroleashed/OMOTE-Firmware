@@ -21,9 +21,38 @@ pio test -e native_test -v         # with output of every assertion
 | `test/fake_filesystem.h` | In-memory file system with fault injection (truncated write, failing rename, bit flip). |
 | `test/test_config_storage/` | Crash safe storage: atomic save, backup rotation, crc, power loss. |
 | `test/test_config_model/` | JSON schema v1: round trip, validation of foreign files, export of the compiled-in configuration. |
+| `test/test_command_snapshot/` | Snapshot of every registered command. The safety net for the whole rework. |
 
 Files in the root of `test/` are shared by every test folder, which is why the
 fakes live there.
+
+## The snapshot test
+
+`test_command_snapshot` registers the same devices that `main.cpp` registers and
+writes name, handler and payloads of every command to a text file, sorted by
+name. `commands.snapshot.txt` is the committed reference.
+
+A step that must not change behaviour (stable names, the sequence engine, the
+JSON loader with no JSON files present) leaves that file untouched. A step that
+changes it does so visibly, in a reviewable diff.
+
+Command ids are deliberately **not** part of the snapshot: they are handed out in
+registration order and are allowed to move. The name is the stable reference.
+
+The first run has no reference yet: the test writes `commands.snapshot.txt` and
+fails with a note. Review the file and commit it - from then on the test guards
+it. To update it after an intended change:
+
+```bash
+pio test -e native_test -f test_command_snapshot     # fails, writes .actual
+mv test/test_command_snapshot/commands.actual.txt \
+   test/test_command_snapshot/commands.snapshot.txt
+```
+
+The snapshot reflects the flags of `env:native_test`, not those of the firmware
+build. With `ENABLE_KEYBOARD_BLE=0` and `ENABLE_KEYBOARD_MQTT=0` the keyboard
+commands are the dummies, which only get an id and are therefore not in the
+table.
 
 ## Conventions
 
