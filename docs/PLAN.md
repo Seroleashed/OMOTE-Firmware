@@ -62,9 +62,9 @@ Aktuelle Branches siehe Spalte „Branch" in der Statusübersicht.
 | 1 | Test-Environment und CI | 0 | 🟡 implementiert, ungetestet | `feature/01-phase0-foundation` |
 | 2 | Erste Tests gegen bestehende Logik | 0 | 🟡 implementiert, ungetestet | `feature/01` + `feature/02-command-snapshot` |
 | 3 | Neue Partitionstabelle | 0 | 🟡 implementiert, ungetestet | `feature/01-phase0-foundation` |
-| 3b | Rollback-Absicherung, Versionsanzeige | 0 | ⬜ offen | |
+| 3b | Rollback-Absicherung, Versionsanzeige | 0 | 🟡 implementiert, ungetestet | `feature/03-ota-rollback-and-version` |
 | 4 | Storage-Layer | 0 | 🟡 implementiert, ungetestet | `feature/01-phase0-foundation` |
-| 4b | Safe-Mode | 0 | ⬜ offen | |
+| 4b | Safe-Mode | 0 | 🟡 implementiert, ungetestet | `feature/04-safe-mode` |
 | 5 | Referenzen über stabile Namen | 1 | 🟡 implementiert, ungetestet | `feature/01-phase0-foundation` |
 | 6 | Schema und Dateiaufteilung | 1 | 🟡 nur Device-Pack v1 | `feature/01-phase0-foundation` |
 | 7 | Export des einkompilierten Zustands | 1 | 🟡 nur C++-Seite, kein Serial/Python | `feature/01-phase0-foundation` |
@@ -575,8 +575,26 @@ Alltagsgewinn.
 
 ## Nächster konkreter Schritt
 
-1. Patchserie aus `new_files/files.zip` auf einem Branch anwenden (Kommandos oben).
-2. Einmal lokal `pio test -e native_test` und `pio run` für alle Environments laufen lassen.
-3. Basiswerte für die Speicherbudget-Tabelle eintragen.
-4. Schritt 3b (mark_app_valid + Versionsanzeige) und der Snapshot-Test aus Schritt 2
-   als kleine PRs hinterher — danach ist Phase 0 wirklich abgeschlossen.
+Phase 0 ist inhaltlich fertig implementiert, aber **noch nie kompiliert**. Reihenfolge
+für den ersten Durchlauf mit fertiger Entwicklungsumgebung:
+
+1. `git checkout feature/01-phase0-foundation`
+   `pio test -e native_test` → erwartet **61 Tests grün**.
+   `pio run` für alle vier Firmware-Environments.
+   Speicherwerte in die Budget-Tabelle eintragen. Dann `main` mergen.
+2. `git checkout feature/02-command-snapshot`
+   Erster Lauf **schlägt absichtlich fehl** und legt
+   `test/test_command_snapshot/commands.snapshot.txt` an. Datei durchsehen
+   (sind alle erwarteten Geräte drin?), committen, erneut laufen lassen → grün.
+   Danach mergen.
+3. `git checkout feature/03-ota-rollback-and-version`
+   Testlauf, dann auf echter Hardware flashen: Serial-Log muss
+   `OMOTE 0.9.0-dev (…), running from 'app0'` zeigen, Settings-Screen die
+   Firmware-Box. **Achtung: hier ist das einmalige `pio run -t erase` fällig**,
+   weil Branch 01 die Partitionstabelle wechselt.
+4. `git checkout feature/04-safe-mode`
+   Testlauf. Auf dem Gerät: Schalter „Safe mode next start" umlegen, neu starten,
+   Settings-Screen muss `Config: safe mode (requested)` zeigen.
+5. Erst danach Phase 1 fortsetzen: Schritt 6 (restliche Schemadateien +
+   Feature-Flags), dann Schritt 7 (Serial-Dump + Python-Werkzeug), dann Schritt 8
+   (JSON-Registrierung, erster Konsument von `bootGuard::isSafeMode()`).
