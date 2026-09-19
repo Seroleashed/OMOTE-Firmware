@@ -1,5 +1,6 @@
 #if defined(WIN32) || defined(__linux__) || defined(__APPLE__)
 
+#include <algorithm>
 #include <cstdio>
 #include <filesystem>
 #include <fstream>
@@ -53,6 +54,23 @@ public:
   bool remove(const std::string &path) override {
     std::error_code ec;
     return std::filesystem::remove(toHostPath(path), ec);
+  }
+
+  std::vector<std::string> list(const std::string &directory) override {
+    std::vector<std::string> paths;
+    std::error_code ec;
+    std::filesystem::directory_iterator entries(toHostPath(directory), ec);
+    if (ec) return paths; // no such directory: nothing configured yet
+
+    for (const std::filesystem::directory_entry &entry : entries) {
+      if (!entry.is_regular_file()) continue;
+      // hand back the device side path, not the host path
+      paths.push_back(directory + "/" + entry.path().filename().string());
+    }
+    // directory_iterator has no defined order, and which device gets registered
+    // first should not depend on the file system's mood
+    std::sort(paths.begin(), paths.end());
+    return paths;
   }
 
 private:

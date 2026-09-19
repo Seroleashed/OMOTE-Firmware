@@ -78,6 +78,29 @@ public:
     return LittleFS.remove(path.c_str());
   }
 
+  std::vector<std::string> list(const std::string &directory) override {
+    std::vector<std::string> paths;
+    if (!mount()) return paths;
+
+    File folder = LittleFS.open(directory.c_str());
+    if (!folder || !folder.isDirectory()) return paths;
+
+    File entry = folder.openNextFile();
+    while (entry) {
+      if (!entry.isDirectory()) {
+        // depending on the core version, name() is either the bare file name or
+        // the full path. Normalise it, the caller wants something it can open.
+        std::string name = entry.name();
+        if (name.find('/') == std::string::npos) name = directory + "/" + name;
+        paths.push_back(name);
+      }
+      entry.close();
+      entry = folder.openNextFile();
+    }
+    folder.close();
+    return paths;
+  }
+
 private:
   bool mounted = false;
 

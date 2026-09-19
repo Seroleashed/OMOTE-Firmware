@@ -34,6 +34,48 @@ void tearDown(void) {}
 
 // --- registration -----------------------------------------------------------
 
+void test_registering_the_same_command_twice_reuses_the_id(void) {
+  /*
+    setKeysForAllRegisteredGUIsAndScenes() calls register_scene_defaultKeys() on
+    every gui and scene registration, so a handful of commands were registered
+    ten times over during startup. Every repeat used to hand out a fresh id and
+    orphan the previous commandData in the map for good.
+  */
+  uint16_t first = 0;
+  uint16_t second = 0;
+  register_command_withName(&first, makeCommandData(SCENE, {"Selection"}), "REPEATED");
+  register_command_withName(&second, makeCommandData(SCENE, {"Selection"}), "REPEATED");
+
+  TEST_ASSERT_EQUAL_UINT16(first, second);
+  TEST_ASSERT_EQUAL_UINT16(first, get_commandID_byName("REPEATED"));
+}
+
+void test_a_repeated_registration_does_not_grow_the_command_table(void) {
+  uint16_t id = 0;
+  register_command_withName(&id, makeCommandData(SCENE, {"Selection"}), "COUNTED");
+  size_t afterFirst = get_all_commands().size();
+
+  for (int i = 0; i < 10; i++) {
+    register_command_withName(&id, makeCommandData(SCENE, {"Selection"}), "COUNTED");
+  }
+  TEST_ASSERT_EQUAL_size_t(afterFirst, get_all_commands().size());
+}
+
+void test_a_registration_with_different_data_still_overrides(void) {
+  // this is what happens when a JSON file replaces a compiled-in device, and it
+  // has to keep working
+  uint16_t original = 0;
+  uint16_t replacement = 0;
+  register_command_withName(&original, makeCommandData(IR, {"7", "0xAAAA"}), "REPLACED");
+  register_command_withName(&replacement, makeCommandData(IR, {"7", "0xBBBB"}), "REPLACED");
+
+  TEST_ASSERT_NOT_EQUAL(original, replacement);
+  TEST_ASSERT_EQUAL_UINT16(replacement, get_commandID_byName("REPLACED"));
+  // and the old id keeps working for whoever still holds it
+  commandData data;
+  TEST_ASSERT_TRUE(get_commandData_byID(original, data));
+}
+
 void test_register_command_assigns_unique_ids(void) {
   TEST_ASSERT_NOT_EQUAL(CMD_IR_SAMSUNG_POWER, CMD_MQTT_BULB);
   TEST_ASSERT_NOT_EQUAL(CMD_MQTT_BULB, CMD_SCENE_TV);
@@ -167,6 +209,9 @@ int main(int argc, char **argv) {
   (void)argc;
   (void)argv;
   UNITY_BEGIN();
+  RUN_TEST(test_registering_the_same_command_twice_reuses_the_id);
+  RUN_TEST(test_a_repeated_registration_does_not_grow_the_command_table);
+  RUN_TEST(test_a_registration_with_different_data_still_overrides);
   RUN_TEST(test_register_command_assigns_unique_ids);
   RUN_TEST(test_get_uniqueCommandID_does_not_collide_with_registered_commands);
   RUN_TEST(test_ir_command_is_sent_with_protocol_and_payload);

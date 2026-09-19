@@ -48,6 +48,20 @@ struct LoadedConfig {
 
 // Must be called once at startup with the file system of the active hardware.
 void setFileSystem(ConfigFileSystem *fileSystem);
+// NULL until setFileSystem() has run. The loader needs it to list a directory
+// and to read files that were put on the device without an envelope.
+ConfigFileSystem *fileSystem();
+
+/*
+  True if this content starts with the envelope header.
+
+  Lets a caller tell two very different situations apart: a file that never had
+  an envelope (copied onto the device by hand, or written by a future transport
+  - perfectly fine, it is plain JSON) from a file that has a header but fails
+  verification (genuinely damaged). load() reports Corrupt for both, but only
+  one of them is a problem worth telling the user about.
+*/
+bool looksLikeEnvelope(const std::string &content);
 
 // name is a plain file name like "/cfg/system.json"
 bool save(const std::string &name, const std::string &payload, uint16_t schemaVersion);

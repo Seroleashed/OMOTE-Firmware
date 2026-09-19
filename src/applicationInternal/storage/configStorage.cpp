@@ -12,6 +12,9 @@ static ConfigFileSystem *fs = nullptr;
 static const char *const HEADER_MAGIC = "OMOTECFG1";
 
 void setFileSystem(ConfigFileSystem *fileSystem) { fs = fileSystem; }
+ConfigFileSystem *fileSystem() { return fs; }
+
+bool looksLikeEnvelope(const std::string &content) { return content.rfind(HEADER_MAGIC, 0) == 0; }
 
 // --- crc32 (IEEE 802.3, same polynomial as zlib) -----------------------------
 uint32_t crc32(const std::string &data) {

@@ -18,3 +18,6 @@ compile_commands.json
 
 # written by the snapshot test when the command table changed
 test/test_command_snapshot/commands.actual.txt
+
+# simulator runtime data: the local stand-in for the littlefs partition
+omote_data/

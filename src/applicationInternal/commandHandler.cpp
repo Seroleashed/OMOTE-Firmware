@@ -76,14 +76,43 @@ static std::string cleanupCommandName(std::string commandName) {
   return commandName;
 }
 
+static bool sameCommandData(const commandData &a, const commandData &b) {
+  return a.commandHandler == b.commandHandler && a.commandPayloads == b.commandPayloads;
+}
+
 // register a command and give it a command id
 void register_command_withName(uint16_t *command, commandData aCommandData, std::string commandName) {
+  commandName = cleanupCommandName(commandName);
+
+  /*
+    Registering exactly the same command again is a no-op.
+
+    This happens a lot: setKeysForAllRegisteredGUIsAndScenes() calls
+    register_scene_defaultKeys() every single time a gui or a scene is
+    registered, so SCENE_SELECTION and its three siblings were registered ten
+    times over during startup. Every repeat used to hand out a fresh id and
+    leave the previous commandData in the map for good - roughly 100 bytes per
+    orphan, 38 of them on a normal boot, plus 38 warnings in the log.
+
+    Reusing the existing id is also the safer answer: anybody still holding the
+    old id keeps a working command, because it *is* the old id.
+
+    A re-registration with different data still overrides, with the warning -
+    that is what happens when a JSON file replaces a compiled-in device.
+  */
+  if (!commandName.empty() && commandIDs_byName.count(commandName) > 0) {
+    uint16_t existing = commandIDs_byName.at(commandName);
+    if (commands.count(existing) > 0 && sameCommandData(commands.at(existing), aCommandData)) {
+      *command = existing;
+      return;
+    }
+  }
+
   *command = uniqueCommandID;
   uniqueCommandID++;
 
   commands[*command] = aCommandData;
 
-  commandName = cleanupCommandName(commandName);
   if (commandName.empty()) return;
 
   if (commandIDs_byName.count(commandName) > 0) {

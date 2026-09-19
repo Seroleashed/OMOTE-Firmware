@@ -62,6 +62,20 @@ public:
     return true;
   }
 
+  std::vector<std::string> list(const std::string &directory) override {
+    std::vector<std::string> paths;
+    std::string prefix = directory;
+    if (prefix.empty() || prefix[prefix.size() - 1] != '/') prefix += "/";
+
+    for (std::map<std::string, std::string>::const_iterator it = files.begin(); it != files.end(); ++it) {
+      if (it->first.rfind(prefix, 0) != 0) continue;
+      // direct children only, no recursion - same as the real implementations
+      if (it->first.find('/', prefix.size()) != std::string::npos) continue;
+      paths.push_back(it->first);
+    }
+    return paths; // std::map already keeps them sorted
+  }
+
   // --- test helpers ---------------------------------------------------------
   void reset() {
     files.clear();

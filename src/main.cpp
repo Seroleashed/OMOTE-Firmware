@@ -8,6 +8,7 @@
 #include "applicationInternal/firmwareInfo.h"
 #include "applicationInternal/bootGuard.h"
 #include "applicationInternal/storage/configStorage.h"
+#include "applicationInternal/storage/configLoader.h"
 // register devices and their commands
 //   special
 #include "devices/misc/device_specialCommands.h"
@@ -94,8 +95,8 @@ int main(int argc, char *argv[]) {
   init_preferences();
 
   // File system for the JSON configuration (littlefs on the ESP32, a local
-  // folder in the simulator). Nothing reads from it yet - the modules are
-  // switched over to it step by step.
+  // folder in the simulator). Has to be set before the devices are registered:
+  // configLoader reads /cfg/devices/ further down.
   configStorage::setFileSystem(get_configFileSystem());
   // blinking led
   init_userled();
@@ -135,6 +136,18 @@ int main(int argc, char *argv[]) {
   register_device_keyboard_ble();
   #endif
   register_keyboardCommands();
+
+  #if (ENABLE_JSON_CONFIG == 1)
+  /*
+    Devices from /cfg/devices/*.json, on top of everything registered above.
+    Deliberately last: what is compiled in is the fallback and gets registered
+    first, a stored file wins over it by name. A broken file is skipped, the
+    rest still loads, and configLoader::lastReport() keeps the reason.
+
+    From here on a new IR device needs no compiler.
+  */
+  configLoader::loadDevices();
+  #endif
 
   // Register the GUIs. They will be displayed in the order they have been registered.
   register_gui_sceneSelection();
