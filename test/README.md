@@ -24,6 +24,8 @@ pio test -e native_test -v         # with output of every assertion
 | `test/test_command_snapshot/` | Snapshot of every registered command. The safety net for the whole rework. |
 | `test/test_firmware_info/` | Firmware version and the conversion of the compiler's build date. |
 | `test/test_boot_guard/` | Safe mode: boot counting, rescue boot, requested safe mode. |
+| `test/test_config_system/` | `system.json` and the envelope every configuration file shares. |
+| `test/test_config_scenes/` | `scenes.json`, `keys.json` and the stable key names behind them. |
 
 Files in the root of `test/` are shared by every test folder, which is why the
 fakes live there.
