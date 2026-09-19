@@ -61,6 +61,7 @@ springt die Prozentzahl dort, obwohl die Firmware kaum wächst.
 | `feature/03` OTA/Version | 1.983.381 (63,0 %) | 100.988 | 1.880.233 (35,9 %) | 63.712 |
 | `feature/04` Safe-Mode | 1.985.593 (63,1 %) | 101.012 | 1.882.361 (35,9 %) | 63.736 |
 | `feature/05` system.json | 1.986.305 (63,1 %) | 101.012 | 1.883.073 (35,9 %) | 63.736 |
+| `feature/06` scenes+keys | 1.987.941 (63,2 %) | 101.012 | 1.884.713 (35,9 %) | 63.736 |
 
 **Phase 0 kostet insgesamt rund 49 KB Flash und 130 Byte statisches RAM** — im
 Wesentlichen ArduinoJson, `configStorage` und LittleFS. Der 5-MB-App-Slot ist zu
@@ -86,7 +87,7 @@ eingeschaltetem „Show mem usage").
 | 4 | Storage-Layer | 0 | ✅ getestet | `feature/01-phase0-foundation` |
 | 4b | Safe-Mode | 0 | ✅ getestet | `feature/04-safe-mode` |
 | 5 | Referenzen über stabile Namen | 1 | ✅ getestet | `feature/01-phase0-foundation` |
-| 6 | Schema und Dateiaufteilung | 1 | 🟡 system+devices fertig, scenes+keys offen | `feature/05-config-files-and-flags` |
+| 6 | Schema und Dateiaufteilung | 1 | ✅ getestet (ui.json → Schritt 15) | `feature/05` + `feature/06-scenes-and-keys` |
 | 7 | Export des einkompilierten Zustands | 1 | 🟡 getestet, nur C++-Seite | `feature/01-phase0-foundation` |
 | 8 | Geräte und Befehle aus JSON registrieren | 1 | ⬜ offen | |
 | 9 | Sequenz-Engine für Szenen | 1 | ⬜ offen | |
@@ -112,7 +113,7 @@ eingeschaltetem „Show mem usage").
 
 Legende: ⬜ offen · 🟡 teilweise · ✅ Tests und alle Builds grün
 
-> **Stand der Prüfung:** `pio test -e native_test` (102 Fälle) und `pio run` für
+> **Stand der Prüfung:** `pio test -e native_test` (127 Fälle) und `pio run` für
 > `esp32-Rev1toRev4`, `esp32-s3-Rev5andHigher`, beide Testboard-Environments und
 > `linux_64bit` laufen auf jedem Branch durch.
 >
@@ -361,20 +362,36 @@ sinnvoll durchsieht:
 - [x] 17 Tests (Round-Trip, Teildatei, falscher Typ, fremder Dateityp, neuere Version,
       keine Zugangsdaten im Export)
 
-**`feature/06-scenes-and-keys` — offen**
+**`feature/06-scenes-and-keys` — erledigt**
 
-- [ ] `/cfg/scenes.json` — Name, `key_repeatModes`, `key_commands_short`,
-      `key_commands_long`, Start-/End-Sequenz, `gui_list`, Aktivierungsbefehl
-- [ ] `/cfg/keys.json` — die 5×5-Matrix; heute sind die 24 `KEY_*` einzelne `char`
-      (`KEY_OK = 'k'`), die Datei braucht stabile Namen statt Zeichen
-- [ ] `/cfg/ui.json` — **bewusst auf Schritt 15 verschoben.** Der Inhalt ist der
-      Widget-Satz des Renderers; ihn jetzt zu erfinden hieße, ihn zweimal zu bauen.
-      Typ und Pfad sind in `configFile.h` schon reserviert.
-- [ ] Migrationsfunktion je Datei: der Mechanismus steht (`parseAndCheckEnvelope`
-      reicht die gefundene Version an den Parser durch), die erste echte Migration
-      kommt mit der ersten Schemaänderung. Kein Vorrat auf Verdacht.
-- [ ] Test „zu große Datei" — sinnvoll erst mit einem Größenlimit, das aus dem
-      Transport (Schritt 11) kommt
+- [x] `keyNames` — stabile Namen für die 24 Tasten. Die Tabelle zeigt auf die
+      `KEY_*`-**Variablen**, nicht auf Kopien ihrer Werte, damit ein späteres Remapping
+      mitgeht statt still zu veralten.
+- [x] `/cfg/scenes.json` — Tastenbelegung mit Repeat-Modus, Kurz- und Langbefehl,
+      `guiList`, Aktivierungsbefehl, Start-/End-Sequenz
+- [x] Die Sequenz ist bereits die `{command, payload, delayAfter}`-Struktur, die die
+      Engine aus Schritt 9 ausführt — das Dateiformat muss dafür nicht noch einmal
+      geändert werden
+- [x] `/cfg/keys.json` — die 5×5-Matrix, **mit Hardware-Revision in der Datei**:
+      Rev5 und Rev1–4 haben dieselben Tasten in *umgekehrter Zeilenreihenfolge*
+      (`keypad_keys_hal_esp32.cpp`). Die falsche Datei zu importieren würde das
+      Tastenfeld spiegeln. Eine Abweichung wird gemeldet, nicht abgelehnt — die
+      Web-UI kann dann anbieten, die Zeilen zu drehen.
+- [x] Abgelehnt **mit Namen**: unbekannte Taste, unbekannter Repeat-Modus, Langbefehl
+      auf einer Taste ohne `SHORTorLONG` (könnte nie auslösen), doppelter Szenenname,
+      falsche Matrixgröße, dieselbe Taste auf zwei Positionen
+- [x] 25 Tests
+
+**Bewusst nicht in Schritt 6:**
+
+- `/cfg/ui.json` → **Schritt 15.** Der Inhalt ist der Widget-Satz des Renderers;
+  ihn jetzt zu erfinden hieße, ihn zweimal zu bauen. Typ und Pfad sind in
+  `configFile.h` reserviert.
+- Migrationsfunktionen: der Mechanismus steht (`parseAndCheckEnvelope` reicht die
+  gefundene Version an den Parser durch, beide Parser haben die Stelle markiert),
+  die erste echte Migration kommt mit der ersten Schemaänderung. Kein Vorrat auf
+  Verdacht.
+- Test „zu große Datei" → sinnvoll erst mit einem Größenlimit aus Schritt 11.
 
 ## Schritt 7 — Export des einkompilierten Zustands 🟡
 
