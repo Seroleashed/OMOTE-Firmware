@@ -43,7 +43,16 @@
 
 namespace configModel {
 
-const uint16_t SCHEMA_VERSION = 1;
+/*
+  One version number per file type, not one for the whole configuration: a new
+  field in the scenes file must not force every device pack in the wild to be
+  rewritten. The paths and type strings live in configFile.h, which is what the
+  files have in common.
+*/
+const uint16_t SCHEMA_VERSION = 1;          // device pack
+const uint16_t SYSTEM_SCHEMA_VERSION = 1;   // system.json
+
+// kept for existing callers, the canonical constant is configFile::TYPE_DEVICE_PACK
 const char *const TYPE_DEVICE_PACK = "omote.devicePack";
 
 struct CommandDef {
@@ -76,5 +85,53 @@ bool parseDevicePack(const std::string &json, DevicePack &pack, std::string &err
 */
 DevicePack devicePackFromRegisteredCommands(const std::string &deviceId, const std::string &deviceName,
                                             const std::string &namePrefix);
+
+/*
+  /cfg/system.json - everything that is neither a device, a scene nor a screen.
+
+      {
+        "schemaVersion": 1,
+        "type": "omote.system",
+        "deviceName": "omote",
+        "display":  { "backlightBrightness": 255, "keyboardBrightness": 255 },
+        "sleep":    { "timeoutMs": 20000, "wakeupByIMU": true, "motionThreshold": 50 },
+        "mqtt":     { "enabled": true, "broker": "192.168.1.2", "port": 1883,
+                      "clientName": "OMOTE" }
+      }
+
+  No passwords and no WiFi SSID: those live in NVS (step 10), so this file can
+  be exported and shared as it is.
+
+  Every field is optional. A missing field keeps the value compiled into the
+  firmware, which is what makes a partial file - say, only the brightness -
+  useful and what keeps a half written file from resetting everything.
+  defaultSystemConfig() provides those compiled-in values.
+*/
+struct SystemConfig {
+  std::string deviceName = "omote";
+
+  uint8_t backlightBrightness = 255;
+  uint8_t keyboardBrightness = 255;
+
+  uint32_t sleepTimeoutMs = 20000;
+  bool wakeupByIMU = true;
+  uint8_t motionThreshold = 50;
+
+  bool mqttEnabled = true;
+  std::string mqttBroker;
+  uint16_t mqttPort = 1883;
+  std::string mqttClientName = "OMOTE";
+};
+
+// the values compiled into the firmware, including those from secrets.h
+SystemConfig defaultSystemConfig();
+
+std::string serializeSystemConfig(const SystemConfig &config);
+/*
+  Parses into config. Fields that the file does not mention are left untouched,
+  so the caller decides the fallback by what it passes in - normally
+  defaultSystemConfig().
+*/
+bool parseSystemConfig(const std::string &json, SystemConfig &config, std::string &error);
 
 } // namespace configModel

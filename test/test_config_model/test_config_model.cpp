@@ -137,9 +137,11 @@ void test_newer_schema_version_is_rejected_with_a_readable_message(void) {
 }
 
 void test_foreign_file_type_is_rejected(void) {
+  // the message names both the type found and the type expected, so the web UI
+  // can say "you picked the wrong file" instead of just "invalid"
   assertRejected("{\"schemaVersion\":1,\"type\":\"something.else\",\"device\":{\"id\":\"a\"},"
                  "\"commands\":[]}",
-                 "device pack");
+                 "omote.devicePack");
 }
 
 void test_device_without_id_is_rejected(void) {

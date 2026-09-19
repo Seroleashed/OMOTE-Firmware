@@ -3,6 +3,8 @@
 #include <ArduinoJson.h>
 
 #include "applicationInternal/omote_log.h"
+#include "applicationInternal/storage/configFile.h"
+#include "secrets.h"
 
 namespace configModel {
 
@@ -40,8 +42,7 @@ bool handlerFromString(const std::string &text, commandHandlers &handler) {
 // --- serialize ---------------------------------------------------------------
 std::string serializeDevicePack(const DevicePack &pack) {
   JsonDocument doc;
-  doc["schemaVersion"] = SCHEMA_VERSION;
-  doc["type"] = TYPE_DEVICE_PACK;
+  configFile::writeEnvelope(doc, configFile::TYPE_DEVICE_PACK, SCHEMA_VERSION);
 
   JsonObject device = doc["device"].to<JsonObject>();
   device["id"] = pack.id;
@@ -71,31 +72,13 @@ bool parseDevicePack(const std::string &json, DevicePack &pack, std::string &err
   pack = DevicePack();
 
   JsonDocument doc;
-  DeserializationError jsonError = deserializeJson(doc, json);
-  if (jsonError) {
-    error = std::string("not valid JSON: ") + jsonError.c_str();
+  uint16_t version = 0;
+  if (!configFile::parseAndCheckEnvelope(json, configFile::TYPE_DEVICE_PACK, SCHEMA_VERSION, doc, version,
+                                         error)) {
     return false;
   }
-  if (!doc.is<JsonObject>()) {
-    error = "expected a JSON object at the top level";
-    return false;
-  }
-
-  if (!doc["schemaVersion"].is<uint16_t>()) {
-    error = "schemaVersion is missing";
-    return false;
-  }
-  uint16_t version = doc["schemaVersion"].as<uint16_t>();
-  if (version > SCHEMA_VERSION) {
-    error = "file was written by a newer version of OMOTE (schemaVersion " +
-            std::to_string(version) + ")";
-    return false;
-  }
-
-  if (doc["type"].as<std::string>() != TYPE_DEVICE_PACK) {
-    error = "this is not a device pack";
-    return false;
-  }
+  // version is 1, the only one that exists. When a version 2 arrives, this is
+  // where the fields of an older file get translated.
 
   JsonObjectConst device = doc["device"];
   if (device.isNull() || !device["id"].is<const char *>() ||
@@ -178,6 +161,101 @@ DevicePack devicePackFromRegisteredCommands(const std::string &deviceId, const s
   omote_log_i("configModel: exported %u commands for device '%s'\r\n",
               (unsigned)pack.commands.size(), pack.id.c_str());
   return pack;
+}
+
+// --- system configuration ----------------------------------------------------
+
+SystemConfig defaultSystemConfig() {
+  SystemConfig config;
+  // secrets.h is and stays the compile time default. The broker address is not
+  // a secret, so it belongs in the exportable file; user and password do not
+  // and stay in NVS (step 10).
+  config.mqttBroker = MQTT_SERVER;
+  config.mqttPort = MQTT_SERVER_PORT;
+  config.mqttClientName = MQTT_CLIENTNAME;
+#if (ENABLE_WIFI_AND_MQTT == 1)
+  config.mqttEnabled = true;
+#else
+  config.mqttEnabled = false;
+#endif
+  return config;
+}
+
+std::string serializeSystemConfig(const SystemConfig &config) {
+  JsonDocument doc;
+  configFile::writeEnvelope(doc, configFile::TYPE_SYSTEM, SYSTEM_SCHEMA_VERSION);
+
+  doc["deviceName"] = config.deviceName;
+
+  JsonObject display = doc["display"].to<JsonObject>();
+  display["backlightBrightness"] = config.backlightBrightness;
+  display["keyboardBrightness"] = config.keyboardBrightness;
+
+  JsonObject sleep = doc["sleep"].to<JsonObject>();
+  sleep["timeoutMs"] = config.sleepTimeoutMs;
+  sleep["wakeupByIMU"] = config.wakeupByIMU;
+  sleep["motionThreshold"] = config.motionThreshold;
+
+  JsonObject mqtt = doc["mqtt"].to<JsonObject>();
+  mqtt["enabled"] = config.mqttEnabled;
+  mqtt["broker"] = config.mqttBroker;
+  mqtt["port"] = config.mqttPort;
+  mqtt["clientName"] = config.mqttClientName;
+  // no user, no password: those are in NVS and must not end up in an export
+
+  std::string result;
+  serializeJsonPretty(doc, result);
+  return result;
+}
+
+/*
+  Reads one value, but only if the file actually has it and it has the right
+  type. Anything else leaves the existing value alone - a typo in one field must
+  not silently reset the device to a default.
+*/
+template <typename T> static void readIfPresent(JsonVariantConst source, T &target) {
+  if (!source.isNull() && source.template is<T>()) target = source.template as<T>();
+}
+
+static void readStringIfPresent(JsonVariantConst source, std::string &target) {
+  if (source.is<const char *>()) target = source.as<std::string>();
+}
+
+bool parseSystemConfig(const std::string &json, SystemConfig &config, std::string &error) {
+  JsonDocument doc;
+  uint16_t version = 0;
+  if (!configFile::parseAndCheckEnvelope(json, configFile::TYPE_SYSTEM, SYSTEM_SCHEMA_VERSION, doc, version,
+                                         error)) {
+    return false;
+  }
+  // version is 1, the only one that exists. When a version 2 arrives, this is
+  // where the fields of an older file get translated.
+
+  readStringIfPresent(doc["deviceName"], config.deviceName);
+
+  JsonVariantConst display = doc["display"];
+  readIfPresent(display["backlightBrightness"], config.backlightBrightness);
+  readIfPresent(display["keyboardBrightness"], config.keyboardBrightness);
+
+  JsonVariantConst sleep = doc["sleep"];
+  readIfPresent(sleep["timeoutMs"], config.sleepTimeoutMs);
+  readIfPresent(sleep["wakeupByIMU"], config.wakeupByIMU);
+  readIfPresent(sleep["motionThreshold"], config.motionThreshold);
+
+  JsonVariantConst mqtt = doc["mqtt"];
+  readIfPresent(mqtt["enabled"], config.mqttEnabled);
+  readStringIfPresent(mqtt["broker"], config.mqttBroker);
+  readIfPresent(mqtt["port"], config.mqttPort);
+  readStringIfPresent(mqtt["clientName"], config.mqttClientName);
+
+  // An empty device name would leave mDNS (step 17) without a hostname and the
+  // web UI without a title, so it is worth refusing rather than repairing.
+  if (config.deviceName.empty()) {
+    error = "deviceName must not be empty";
+    return false;
+  }
+
+  return true;
 }
 
 } // namespace configModel
