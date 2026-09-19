@@ -2,6 +2,7 @@
 #include "scenes/scene_TV.h"
 #include "applicationInternal/keys.h"
 #include "applicationInternal/scenes/sceneRegistry.h"
+#include "applicationInternal/scenes/sequenceEngine.h"
 #include "applicationInternal/hardware/hardwarePresenter.h"
 // devices
 #include "devices/TV/device_samsungTV/device_samsungTV.h"
@@ -52,14 +53,15 @@ void scene_setKeys_TV() {
 }
 
 void scene_start_sequence_TV(void) {
-  executeCommand(SAMSUNG_POWER_ON);
-  delay(500);
-  executeCommand(YAMAHA_POWER_ON);
-  delay(1500);
-  executeCommand(YAMAHA_INPUT_DVD);
-  delay(3000);
-  executeCommand(SAMSUNG_INPUT_TV);
-
+  // The sequence is data now, stepped through by sequenceEngine over the main
+  // loop. Same timing as the delay() version it replaces, but the display, the
+  // keypad and the IR receiver stay alive while it runs.
+  sequenceEngine::enqueue({
+    {SAMSUNG_POWER_ON, "",  500},
+    {YAMAHA_POWER_ON,  "", 1500},
+    {YAMAHA_INPUT_DVD, "", 3000},
+    {SAMSUNG_INPUT_TV, "",    0},
+  });
 }
 
 void scene_end_sequence_TV(void) {

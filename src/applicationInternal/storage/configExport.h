@@ -17,11 +17,11 @@
   * it is the migration path. A user who has their devices in C++ today runs the
     export once and has them as files, instead of retyping 300 IR codes.
 
-  What cannot be exported: the scene start and end sequences. They are C++
-  functions with delay() in them, not data - see scene_TV.cpp. Step 9 turns them
-  into the sequence structure that scenes.json already has a place for. Until
-  then an exported scene has an empty sequence, and the export says so out loud
-  rather than pretending the scene is complete.
+  The scene sequences come out too, since step 9. They are still C++ functions,
+  but all they do now is enqueue steps into sequenceEngine - so the export lets
+  one enqueue into an empty queue and takes the result, without running a single
+  step. Nothing is sent at the TV in the living room while a configuration is
+  exported.
 */
 
 namespace configExport {
@@ -44,8 +44,9 @@ configModel::DevicePack devicePack(const DeviceSelector &selector);
 */
 configModel::ScenesConfig scenes();
 
-// true if any exported scene had a start or end sequence that could not be
-// represented - see the note above
+// true if a sequence step had to be left out because its command has no name.
+// That means a scene refers to something the registry does not know by name,
+// which is worth reporting rather than dropping quietly.
 bool scenesHaveUnexportableSequences();
 
 // The keypad matrix as the hardware layer has it.

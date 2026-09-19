@@ -3,6 +3,7 @@
 #include "applicationInternal/gui/guiBase.h"
 #include "applicationInternal/gui/guiMemoryOptimizer.h"
 #include "applicationInternal/scenes/sceneRegistry.h"
+#include "applicationInternal/scenes/sequenceEngine.h"
 #include "applicationInternal/hardware/hardwarePresenter.h"
 #include "applicationInternal/commandHandler.h"
 #include "applicationInternal/omote_log.h"
@@ -120,6 +121,13 @@ void handleScene(uint16_t command, commandData commandData, std::string addition
   gui_loop();
 
   if (callEndAndStartSequences) {
+    /*
+      Whatever is still pending belongs to a scene the user has moved on from,
+      so it goes. The two sequences below then enqueue behind each other and run
+      in order, exactly as they did when they were a chain of delay() calls.
+    */
+    sequenceEngine::abort();
+
     // end old scene
     if (!sceneExists(gui_memoryOptimizer_getActiveSceneName()) && (gui_memoryOptimizer_getActiveSceneName() != "")) {
       omote_log_w("scene: WARNING: cannot end scene %s, because it is unknown\r\n", gui_memoryOptimizer_getActiveSceneName().c_str());

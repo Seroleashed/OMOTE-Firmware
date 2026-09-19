@@ -16,6 +16,7 @@
 #include "applicationInternal/commandHandler.h"
 #include "applicationInternal/hardware/IRremoteProtocols.h"
 #include "applicationInternal/scenes/sceneRegistry.h"
+#include "applicationInternal/scenes/sequenceEngine.h"
 #include "applicationInternal/storage/configExport.h"
 #include "omote_fakes.h"
 
@@ -37,8 +38,15 @@ static void sceneSetKeys() {
   commandsShortOfScene = {{KEY_UP, TESTDEV_UP}, {KEY_OK, TESTDEV_POWER}};
   commandsLongOfScene = {{KEY_OK, TESTDEV_MENU}};
 }
-static void sceneStartSequence() {}
-static void sceneEndSequence() {}
+// Since step 9 a sequence function does not execute anything, it enqueues.
+// That is what makes the export able to read it back out as data.
+static void sceneStartSequence() {
+  sequenceEngine::enqueue({
+      {TESTDEV_POWER, "", 500},
+      {TESTDEV_UP, "an", 1500},
+  });
+}
+static void sceneEndSequence() { sequenceEngine::enqueue({{TESTDEV_MENU, "", 0}}); }
 
 void setUp(void) {
   fakes::reset();
@@ -168,19 +176,68 @@ void test_a_long_command_without_shortorlong_is_dropped_not_exported(void) {
   TEST_ASSERT_EQUAL_STRING("", reparsed.scenes[0].keys[0].commandLong.c_str());
 }
 
-void test_a_scene_with_sequences_is_reported_as_incomplete(void) {
-  // the sequences are C++ functions with delay() in them, not data. Step 9
-  // changes that; until then the export has to say so rather than pretend the
-  // scene came out whole.
+void test_a_scene_sequence_is_exported_as_data(void) {
   registerTestScene();
-  configExport::scenes();
-  TEST_ASSERT_TRUE(configExport::scenesHaveUnexportableSequences());
+  configModel::ScenesConfig config = configExport::scenes();
+
+  const configModel::SceneConfig &scene = config.scenes[0];
+  TEST_ASSERT_EQUAL_size_t(2, scene.startSequence.size());
+  TEST_ASSERT_EQUAL_STRING("TESTDEV_POWER", scene.startSequence[0].commandName.c_str());
+  TEST_ASSERT_EQUAL_UINT32(500, scene.startSequence[0].delayAfterMs);
+  TEST_ASSERT_EQUAL_STRING("TESTDEV_UP", scene.startSequence[1].commandName.c_str());
+  TEST_ASSERT_EQUAL_STRING("an", scene.startSequence[1].payload.c_str());
+  TEST_ASSERT_EQUAL_UINT32(1500, scene.startSequence[1].delayAfterMs);
+
+  TEST_ASSERT_EQUAL_size_t(1, scene.endSequence.size());
+  TEST_ASSERT_EQUAL_STRING("TESTDEV_MENU", scene.endSequence[0].commandName.c_str());
+  TEST_ASSERT_FALSE(configExport::scenesHaveUnexportableSequences());
 }
 
-void test_a_scene_without_sequences_is_not_reported(void) {
+void test_exporting_a_sequence_does_not_run_it(void) {
+  // Exporting the configuration must not switch the television on. The export
+  // lets the sequence enqueue and takes the queue; loop() is never called.
+  registerTestScene();
+  configExport::scenes();
+
+  TEST_ASSERT_EQUAL_size_t(0, fakes::irSends.size());
+  TEST_ASSERT_FALSE(sequenceEngine::isRunning());
+}
+
+void test_an_exported_sequence_can_be_imported_again(void) {
+  registerTestScene();
+  std::string json = configModel::serializeScenes(configExport::scenes());
+
+  configModel::ScenesConfig reparsed;
+  std::string error;
+  TEST_ASSERT_TRUE_MESSAGE(configModel::parseScenes(json, reparsed, error), error.c_str());
+  TEST_ASSERT_EQUAL_size_t(2, reparsed.scenes[0].startSequence.size());
+  TEST_ASSERT_EQUAL_UINT32(1500, reparsed.scenes[0].startSequence[1].delayAfterMs);
+}
+
+void test_a_step_whose_command_has_no_name_is_reported(void) {
+  // a scene referring to something the registry does not know by name cannot be
+  // written to a file, and that is worth saying out loud
+  static uint16_t unnamed = 0;
+  get_uniqueCommandID(&unnamed);
+
+  static uint16_t captured = unnamed;
+  struct Local {
+    static void sequence() { sequenceEngine::enqueue({{captured, "", 0}}); }
+  };
+  register_scene("Namenlos", NULL, &Local::sequence, NULL, &repeatModesOfScene,
+                 &commandsShortOfScene, &commandsLongOfScene, NULL, 0);
+
+  configModel::ScenesConfig config = configExport::scenes();
+  TEST_ASSERT_TRUE(configExport::scenesHaveUnexportableSequences());
+  TEST_ASSERT_EQUAL_size_t(0, config.scenes[0].startSequence.size());
+}
+
+void test_a_scene_without_sequences_exports_empty_ones(void) {
   register_scene("Ohne", NULL, NULL, NULL, &repeatModesOfScene, &commandsShortOfScene,
                  &commandsLongOfScene, NULL, 0);
-  configExport::scenes();
+  configModel::ScenesConfig config = configExport::scenes();
+
+  TEST_ASSERT_EQUAL_size_t(0, config.scenes[0].startSequence.size());
   TEST_ASSERT_FALSE(configExport::scenesHaveUnexportableSequences());
 }
 
@@ -267,8 +324,11 @@ int main(int argc, char **argv) {
   RUN_TEST(test_scene_keys_are_exported_with_names_not_ids);
   RUN_TEST(test_an_exported_scene_can_be_imported_again);
   RUN_TEST(test_a_long_command_without_shortorlong_is_dropped_not_exported);
-  RUN_TEST(test_a_scene_with_sequences_is_reported_as_incomplete);
-  RUN_TEST(test_a_scene_without_sequences_is_not_reported);
+  RUN_TEST(test_a_scene_sequence_is_exported_as_data);
+  RUN_TEST(test_exporting_a_sequence_does_not_run_it);
+  RUN_TEST(test_an_exported_sequence_can_be_imported_again);
+  RUN_TEST(test_a_step_whose_command_has_no_name_is_reported);
+  RUN_TEST(test_a_scene_without_sequences_exports_empty_ones);
   RUN_TEST(test_the_matrix_is_exported_with_key_names);
   RUN_TEST(test_an_exported_matrix_can_be_imported_again);
   RUN_TEST(test_without_a_matrix_the_export_is_empty_not_wrong);

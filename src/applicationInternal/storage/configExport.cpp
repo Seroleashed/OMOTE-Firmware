@@ -5,6 +5,7 @@
 #include "applicationInternal/keyNames.h"
 #include "applicationInternal/omote_log.h"
 #include "applicationInternal/scenes/sceneRegistry.h"
+#include "applicationInternal/scenes/sequenceEngine.h"
 #include "applicationInternal/storage/configFile.h"
 
 namespace configExport {
@@ -20,6 +21,42 @@ configModel::DevicePack devicePack(const DeviceSelector &selector) {
   pack.manufacturer = selector.manufacturer;
   pack.model = selector.model;
   return pack;
+}
+
+/*
+  Runs a scene's sequence function against an empty queue and takes what it
+  enqueued. Nothing is executed - loop() is never called, so no command leaves
+  the device.
+
+  A step whose command has no name cannot be written to a file. That would mean
+  a scene referring to something the registry does not know by name, which is a
+  bug worth naming rather than a step to drop quietly.
+*/
+static std::vector<configModel::SequenceStep> captureSequence(void (*sequenceFunction)(),
+                                                              const std::string &sceneName) {
+  std::vector<configModel::SequenceStep> steps;
+  if (sequenceFunction == NULL) return steps;
+
+  sequenceEngine::abort();
+  sequenceFunction();
+  std::vector<sequenceEngine::Step> captured = sequenceEngine::takePending();
+
+  for (size_t i = 0; i < captured.size(); i++) {
+    std::string name = get_commandName_byID(captured[i].command);
+    if (name.empty()) {
+      unexportableSequences = true;
+      omote_log_w("configExport: scene '%s' has a sequence step whose command has no name, "
+                  "it is not exported\r\n",
+                  sceneName.c_str());
+      continue;
+    }
+    configModel::SequenceStep step;
+    step.commandName = name;
+    step.payload = captured[i].payload;
+    step.delayAfterMs = captured[i].delayAfterMs;
+    steps.push_back(step);
+  }
+  return steps;
 }
 
 configModel::ScenesConfig scenes() {
@@ -86,10 +123,14 @@ configModel::ScenesConfig scenes() {
       scene.keys.push_back(binding);
     }
 
-    // Sequences are code, not data. Step 9 changes that.
-    if (definition.this_scene_start_sequence != NULL || definition.this_scene_end_sequence != NULL) {
-      unexportableSequences = true;
-    }
+    /*
+      The sequences are still C++ functions, but since step 9 all they do is
+      enqueue steps into sequenceEngine. So we let them enqueue into an empty
+      queue and take the result instead of running it - the sequence comes out
+      as data without a single IR command being sent at the actual TV.
+    */
+    scene.startSequence = captureSequence(definition.this_scene_start_sequence, scene.name);
+    scene.endSequence = captureSequence(definition.this_scene_end_sequence, scene.name);
 
     config.scenes.push_back(scene);
   }
@@ -144,8 +185,8 @@ std::string dumpConfigAsJson(const std::vector<DeviceSelector> &devices) {
   appendFile(dump, configFile::PATH_KEYS, configModel::serializeKeys(keys()));
 
   if (scenesHaveUnexportableSequences()) {
-    dump += "\nNote: the start and end sequences of the scenes are C++ functions and are not part of\n"
-            "this export. They become data in step 9; until then they stay compiled in.\n";
+    dump += "\nNote: at least one sequence step refers to a command that has no name and could not\n"
+            "be exported. See the log for which scene.\n";
   }
 
   return dump;

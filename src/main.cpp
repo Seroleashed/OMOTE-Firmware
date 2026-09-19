@@ -59,6 +59,7 @@
 #include "scenes/scene_chromecast.h"
 #include "scenes/scene_appleTV.h"
 #include "applicationInternal/scenes/sceneHandler.h"
+#include "applicationInternal/scenes/sequenceEngine.h"
 
 #if defined(ARDUINO)
 // in case of Arduino we have a setup() and a loop()
@@ -244,6 +245,9 @@ void loop(unsigned long *pIMUTaskTimer, unsigned long *pUpdateStatusTimer) {
   #endif
   // keypad handling: get key states from hardware and process them
   keypad_loop();
+  // step through a running scene sequence. Before the engine existed, the
+  // scenes held this very loop with delay() while they switched devices on.
+  sequenceEngine::loop(millis());
   // process IR receiver, if activated
   if (get_irReceiverEnabled()) {
     infraredReceiver_loop();

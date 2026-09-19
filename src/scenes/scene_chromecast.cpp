@@ -2,6 +2,7 @@
 #include "scenes/scene_chromecast.h"
 #include "applicationInternal/keys.h"
 #include "applicationInternal/scenes/sceneRegistry.h"
+#include "applicationInternal/scenes/sequenceEngine.h"
 #include "applicationInternal/hardware/hardwarePresenter.h"
 // devices
 #include "devices/TV/device_samsungTV/device_samsungTV.h"
@@ -50,14 +51,12 @@ void scene_setKeys_chromecast() {
 }
 
 void scene_start_sequence_chromecast(void) {
-  executeCommand(SAMSUNG_POWER_ON);
-  delay(500);
-  executeCommand(YAMAHA_POWER_ON);
-  delay(1500);
-  executeCommand(YAMAHA_INPUT_DVD);
-  delay(3000);
-  executeCommand(SAMSUNG_INPUT_HDMI_1);
-
+  sequenceEngine::enqueue({
+    {SAMSUNG_POWER_ON,      "",  500},
+    {YAMAHA_POWER_ON,       "", 1500},
+    {YAMAHA_INPUT_DVD,      "", 3000},
+    {SAMSUNG_INPUT_HDMI_1,  "",    0},
+  });
 }
 
 void scene_end_sequence_chromecast(void) {

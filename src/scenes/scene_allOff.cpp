@@ -2,6 +2,7 @@
 #include "scenes/scene_allOff.h"
 #include "applicationInternal/keys.h"
 #include "applicationInternal/scenes/sceneRegistry.h"
+#include "applicationInternal/scenes/sequenceEngine.h"
 #include "applicationInternal/hardware/hardwarePresenter.h"
 // devices
 #include "devices/TV/device_samsungTV/device_samsungTV.h"
@@ -50,25 +51,22 @@ void scene_setKeys_allOff() {
 }
 
 void scene_start_sequence_allOff(void) {
-  executeCommand(SAMSUNG_POWER_OFF);
-  delay(500);
-  executeCommand(YAMAHA_POWER_OFF);
-  delay(500);
-  // repeat IR to be sure
-  executeCommand(SAMSUNG_POWER_OFF);
-  delay(500);
-  executeCommand(YAMAHA_POWER_OFF);
-  delay(500);
-  // repeat IR to be sure
-  executeCommand(SAMSUNG_POWER_OFF);
-  delay(500);
-  executeCommand(YAMAHA_POWER_OFF);
-  delay(500);
-  // you cannot power off FireTV, but at least you can stop the currently running app
-  executeCommand(KEYBOARD_HOME);
-  delay(500);
-  executeCommand(KEYBOARD_HOME);
-
+  // 3.5 seconds of switching things off. This used to hold the main loop for
+  // the whole time - the display frozen, key presses unseen. Now it runs over
+  // the loop, step by step.
+  sequenceEngine::enqueue({
+    {SAMSUNG_POWER_OFF, "", 500},
+    {YAMAHA_POWER_OFF,  "", 500},
+    // repeat IR to be sure
+    {SAMSUNG_POWER_OFF, "", 500},
+    {YAMAHA_POWER_OFF,  "", 500},
+    // repeat IR to be sure
+    {SAMSUNG_POWER_OFF, "", 500},
+    {YAMAHA_POWER_OFF,  "", 500},
+    // you cannot power off FireTV, but at least you can stop the currently running app
+    {KEYBOARD_HOME,     "", 500},
+    {KEYBOARD_HOME,     "",   0},
+  });
 }
 
 void scene_end_sequence_allOff(void) {

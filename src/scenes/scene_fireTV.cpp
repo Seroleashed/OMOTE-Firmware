@@ -2,6 +2,7 @@
 #include "scenes/scene_fireTV.h"
 #include "applicationInternal/keys.h"
 #include "applicationInternal/scenes/sceneRegistry.h"
+#include "applicationInternal/scenes/sequenceEngine.h"
 #include "applicationInternal/hardware/hardwarePresenter.h"
 // devices
 #include "devices/TV/device_samsungTV/device_samsungTV.h"
@@ -52,27 +53,22 @@ void scene_setKeys_fireTV() {
 }
 
 void scene_start_sequence_fireTV(void) {
-  executeCommand(SAMSUNG_POWER_ON);
-  delay(500);
-  executeCommand(YAMAHA_POWER_ON);
-  delay(1500);
-  executeCommand(YAMAHA_INPUT_DTV);
-  delay(3000);
-  executeCommand(SAMSUNG_INPUT_HDMI_2);
-  delay(100);
-  
-  executeCommand(KEYBOARD_HOME);
-  delay(500);
-  executeCommand(KEYBOARD_HOME);
-
+  sequenceEngine::enqueue({
+    {SAMSUNG_POWER_ON,      "",  500},
+    {YAMAHA_POWER_ON,       "", 1500},
+    {YAMAHA_INPUT_DTV,      "", 3000},
+    {SAMSUNG_INPUT_HDMI_2,  "",  100},
+    {KEYBOARD_HOME,         "",  500},
+    {KEYBOARD_HOME,         "",    0},
+  });
 }
 
 void scene_end_sequence_fireTV(void) {
   // you cannot power off FireTV, but at least you can stop the currently running app
-  executeCommand(KEYBOARD_HOME);
-  delay(500);
-  executeCommand(KEYBOARD_HOME);
-
+  sequenceEngine::enqueue({
+    {KEYBOARD_HOME, "", 500},
+    {KEYBOARD_HOME, "",   0},
+  });
 }
 
 std::string scene_name_fireTV = "Fire TV";
