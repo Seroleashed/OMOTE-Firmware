@@ -90,6 +90,7 @@ springt die Prozentzahl dort, obwohl die Firmware kaum wächst.
 | `feature/09` Sequenz-Engine | 2.015.453 (64,1 %) | 101.116 | 1.912.289 (36,5 %) | 63.832 |
 | `feature/10` Zugangsdaten | 2.021.457 (64,3 %) | 101.132 | 1.918.453 (36,6 %) | 63.864 |
 | `feature/11` Transport | 2.022.057 (64,3 %) | 101.132 | 1.919.057 (36,6 %) | 63.864 |
+| `feature/12` USB + omotectl | 2.035.521 (64,7 %) | — | 1.932.741 (36,9 %) | — |
 
 ⚠️ Schritt 7 kostet **20,6 KB Flash** — der größte Sprung seit Phase 0. Grund ist der
 Serial-Dump im Settings-Screen: er zieht `configExport` samt Serialisierung aller vier
@@ -127,7 +128,7 @@ eingeschaltetem „Show mem usage").
 | 9 | Sequenz-Engine für Szenen | 1 | ✅ getestet | `feature/09-sequence-engine` |
 | 10 | Zugangsdaten im NVS | 1 | ✅ getestet | `feature/10-credentials-nvs` |
 | 11 | Transport-Abstraktion | 2 | ✅ getestet | `feature/11-transport` |
-| 12 | USB-Transport plus Host-Werkzeug | 2 | ⬜ offen | |
+| 12 | USB-Transport plus Host-Werkzeug | 2 | ✅ gegen Simulator verifiziert | `feature/12-usb-transport` |
 | 13 | BLE-Transport | 2 | ⬜ offen | |
 | 14 | Gerätepakete | 2 | ⬜ offen | |
 | 15 | JSON→LVGL-Renderer | 3 | ⬜ offen | |
@@ -147,7 +148,7 @@ eingeschaltetem „Show mem usage").
 
 Legende: ⬜ offen · 🟡 teilweise · ✅ Tests und alle Builds grün
 
-> **Stand der Prüfung:** `pio test -e native_test` (219 Fälle) und `pio run` für
+> **Stand der Prüfung:** `pio test -e native_test` (233 Fälle) und `pio run` für
 > `esp32-Rev1toRev4`, `esp32-s3-Rev5andHigher`, beide Testboard-Environments und
 > `linux_64bit` laufen auf jedem Branch durch.
 >
@@ -165,6 +166,7 @@ Legende: ⬜ offen · 🟡 teilweise · ✅ Tests und alle Builds grün
 > | 8 | Freier Heap mit 10 aus JSON geladenen Geräten |
 > | 9 | Display baut sich während einer laufenden Szene weiter auf |
 > | 10 | AP `OMOTE-setup` kommt hoch, NVS überlebt einen Neustart |
+> | 12 | Kommt `Serial` unter Last mit dem Protokoll mit? |
 > | — | freier Heap nach Boot, größter Block (Budget-Tabelle) |
 >
 > **Ersatz, solange keine Hardware da ist:** `linux_64bit` ist der einzige Build, der
@@ -617,14 +619,45 @@ Der Transport kennt kein JSON, er überträgt nur Dateien.
   Gerät der Speicher ausgeht.
 - **`REBOOT` antwortet vor dem Neustart** — danach ist niemand mehr da, der antworten könnte.
 
-## Schritt 12 — USB-Transport plus Host-Werkzeug ⬜
+## Schritt 12 — USB-Transport plus Host-Werkzeug ✅
 
-- [ ] S3: natives USB-CDC
-- [ ] Rev1–4: derselbe Code über den UART-Brücken-Chip (leichter Bonus für ältere Revisionen)
-- [ ] CLI in Python mit `uv`: `omotectl pull`, `omotectl push`,
-      `omotectl device export samsung-tv`
-- [ ] WebSerial-Anbindung im Browser — damit ist die Web-UI später auch ohne WLAN nutzbar
-- [ ] End-to-End manuell: Gerät exportieren, Datei ändern, zurückspielen, Neustart
+- [x] Serial auf beiden Revisionen — Rev5 über natives USB, Rev1–4 über den
+      Brücken-Chip. Von `transportSession` aus sieht beides gleich aus, die älteren
+      Revisionen bekommen das also geschenkt
+- [x] `transportSession`: Sitzung per Magic-Zeile, Log stumm für die Dauer, Timeout
+- [x] `omote_log` routet über `omote_log_printf()` statt direkt auf `Serial`
+- [x] `tools/omotectl.py` (uv, pyserial): `list`, `info`, `pull`, `push`, `rm`
+- [x] **TCP-Transport im Simulator** auf `127.0.0.1:8377` — dasselbe Protokoll,
+      dasselbe Host-Werkzeug, ohne Hardware
+- [x] End-to-End gegen den laufenden Simulator verifiziert (siehe unten)
+
+**Das eigentliche Problem war der geteilte Port.** Es gibt genau einen, das Log
+schreibt permanent hinein, und eine Log-Zeile mitten in einer Übertragung zerstört die
+Datei. Deshalb ist das Protokoll eine *Sitzung*: außerhalb gehört der Port dem Log,
+innerhalb schweigt es. Und eine Sitzung muss **immer** enden — ohne Timeout bliebe das
+Log nach einem gezogenen Kabel bis zum nächsten Neustart stumm, und das Gerät wäre aus
+einem Grund still, den niemand sehen kann.
+
+**`BYE` wird das Protokoll gefragt, nicht im Bytestrom gesucht.** Eine Konfigurationsdatei
+ist Text, und eine ihrer Zeilen kann `BYE` lauten. Wer danach sucht, schließt die
+Sitzung mitten im Schreiben dieser Datei. Ein Test schickt genau so eine Datei.
+
+**Der TCP-Transport hat sofort einen echten Fehler gefunden:** `LIST` meldete die
+Dateigröße *auf der Platte*, also inklusive Envelope, während `GET` die Payload
+liefert. Jede gepushte Datei wäre 38 Byte größer gelistet worden, als der Host sie
+geschickt hat. Behoben, mit Test.
+
+```
+push devices_library/lgTV.json  ->  5870 Byte
+list                            ->  5870 Byte
+pull                            ->  byte-identisch zum Original
+```
+
+**Verschoben:** WebSerial im Browser → Schritt 19, wo das Frontend entsteht. Das
+Protokoll ist dasselbe; es fehlt nur die JavaScript-Seite.
+
+**Noch offen auf Hardware:** ob `Serial.available()`/`read()` unter Last mit dem
+Protokoll mithalten. Der Simulator liest von einem Socket, das ist nicht dasselbe.
 
 ## Schritt 13 — BLE-Transport ⬜
 
