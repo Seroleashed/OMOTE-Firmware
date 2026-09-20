@@ -89,6 +89,7 @@ springt die Prozentzahl dort, obwohl die Firmware kaum wächst.
 | `feature/08` JSON-Loader | 2.010.097 (63,9 %) | 101.068 | 1.906.833 (36,4 %) | 63.784 |
 | `feature/09` Sequenz-Engine | 2.015.453 (64,1 %) | 101.116 | 1.912.289 (36,5 %) | 63.832 |
 | `feature/10` Zugangsdaten | 2.021.457 (64,3 %) | 101.132 | 1.918.453 (36,6 %) | 63.864 |
+| `feature/11` Transport | 2.022.057 (64,3 %) | 101.132 | 1.919.057 (36,6 %) | 63.864 |
 
 ⚠️ Schritt 7 kostet **20,6 KB Flash** — der größte Sprung seit Phase 0. Grund ist der
 Serial-Dump im Settings-Screen: er zieht `configExport` samt Serialisierung aller vier
@@ -125,7 +126,7 @@ eingeschaltetem „Show mem usage").
 | 8 | Geräte und Befehle aus JSON registrieren | 1 | ✅ getestet, im Simulator verifiziert | `feature/08-json-device-loader` |
 | 9 | Sequenz-Engine für Szenen | 1 | ✅ getestet | `feature/09-sequence-engine` |
 | 10 | Zugangsdaten im NVS | 1 | ✅ getestet | `feature/10-credentials-nvs` |
-| 11 | Transport-Abstraktion | 2 | ⬜ offen | |
+| 11 | Transport-Abstraktion | 2 | ✅ getestet | `feature/11-transport` |
 | 12 | USB-Transport plus Host-Werkzeug | 2 | ⬜ offen | |
 | 13 | BLE-Transport | 2 | ⬜ offen | |
 | 14 | Gerätepakete | 2 | ⬜ offen | |
@@ -146,7 +147,7 @@ eingeschaltetem „Show mem usage").
 
 Legende: ⬜ offen · 🟡 teilweise · ✅ Tests und alle Builds grün
 
-> **Stand der Prüfung:** `pio test -e native_test` (191 Fälle) und `pio run` für
+> **Stand der Prüfung:** `pio test -e native_test` (219 Fälle) und `pio run` für
 > `esp32-Rev1toRev4`, `esp32-s3-Rev5andHigher`, beide Testboard-Environments und
 > `linux_64bit` laufen auf jedem Branch durch.
 >
@@ -588,17 +589,33 @@ Schritt, der vor Schritt 18 fällig ist.
 
 > Diese Phase lässt sich vorziehen, wenn du früher ohne Weboberfläche konfigurieren willst.
 
-## Schritt 11 — Transport-Abstraktion ⬜
+## Schritt 11 — Transport-Abstraktion ✅
 
 **Ziel:** Ein schlankes, zeilenbasiertes Protokoll über einem beliebigen Bytestrom.
 Der Transport kennt kein JSON, er überträgt nur Dateien.
 
-- [ ] Befehle: `LIST`, `GET <pfad>`, `PUT <pfad> <länge> <crc>`, `DEL`, `APPLY`, `INFO`, `REBOOT`
-- [ ] Chunking mit Quittungen (BLE hat nur kleine MTUs)
-- [ ] CRC32 pro Chunk (`configStorage::crc32` wiederverwenden)
-- [ ] Payload ohne Envelope (Entscheidung aus Schritt 6)
-- [ ] Vollständig nativ testbar: Protokollparser gegen Bytestrom-Attrappe
-- [ ] Tests: abgebrochene Übertragung, falsche CRC, unbekannter Befehl, Pfad-Traversal
+- [x] Befehle: `LIST`, `GET`, `PUT`, `DEL`, `APPLY`, `INFO`, `REBOOT`
+- [x] Chunking mit Quittungen alle 256 Byte
+- [x] CRC32 über die ganze Datei (`configStorage::crc32` wiederverwendet)
+- [x] Payload ohne Envelope — ein Test prüft, dass `OMOTECFG` nie über die Leitung geht
+- [x] Vollständig nativ testbar: wird mit Bytes gefüttert, gibt Bytes zurück.
+      Keine Stream-Abstraktion, kein Timing — 28 Tests in 15 Sekunden
+- [x] 28 Tests: abgebrochene Übertragung, falsche CRC, unbekannter Befehl,
+      Pfad-Traversal, zu lange Zeile, CRLF, über zwei Reads geteiltes Kommando
+
+**Worauf es ankam:**
+
+- **Innerhalb eines `PUT` ist jedes Byte Nutzlast**, Zeilenumbrüche eingeschlossen. Eine
+  JSON-Datei ist voll davon, und eine ihrer Zeilen könnte leicht wie ein Kommando
+  aussehen. Ein Test schickt eine Datei mit `REBOOT` in einer eigenen Zeile.
+- **Eine falsche CRC schreibt gar nichts.** Eine beschädigt angekommene Datei darf
+  keine heile ersetzen.
+- **Quittungen alle 256 Byte.** BLE übergibt etwa zwanzig Byte am Stück; ohne Rückmeldung
+  weiß der Sender nicht, ob die Gegenseite mitkommt.
+- **Pfade müssen mit `/cfg/` beginnen** und dürfen weder `..` noch Backslash enthalten.
+- **Eine überlange Zeile wird verworfen**, statt einen Puffer wachsen zu lassen, bis dem
+  Gerät der Speicher ausgeht.
+- **`REBOOT` antwortet vor dem Neustart** — danach ist niemand mehr da, der antworten könnte.
 
 ## Schritt 12 — USB-Transport plus Host-Werkzeug ⬜
 
