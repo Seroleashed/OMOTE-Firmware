@@ -95,6 +95,7 @@ springt die Prozentzahl dort, obwohl die Firmware kaum wächst.
 | `feature/14` scenes+keys wirken | 2.036.381 (64,7 %) | — | 1.933.601 (36,9 %) | — |
 | `feature/15` BLE-Transport | 2.036.689 (64,7 %) | — | 1.933.917 (36,9 %) | 64.216 |
 | ⤷ mit `ENABLE_BLE_CONFIG=1` | — | — | 1.936.673 (36,9 %) | 64.272 |
+| `feature/16` Gerätepakete | 2.038.133 (64,8 %) | — | 1.935.369 (36,9 %) | — |
 
 ⚠️ Schritt 7 kostet **20,6 KB Flash** — der größte Sprung seit Phase 0. Grund ist der
 Serial-Dump im Settings-Screen: er zieht `configExport` samt Serialisierung aller vier
@@ -136,7 +137,7 @@ eingeschaltetem „Show mem usage").
 | 8b | `system.json` anwenden | 1 | ✅ gegen Simulator verifiziert | `feature/13-apply-system-config` |
 | 8c | `scenes.json` und `keys.json` anwenden | 1 | ✅ getestet | `feature/14-apply-scenes-keys` |
 | 13 | BLE-Transport | 2 | 🟡 kompiliert, auf Hardware ungetestet | `feature/15-ble-transport` |
-| 14 | Gerätepakete | 2 | ⬜ offen | |
+| 14 | Gerätepakete | 2 | ✅ gegen Simulator verifiziert | `feature/16-device-packs` |
 | 15 | JSON→LVGL-Renderer | 3 | ⬜ offen | |
 | 16 | Mitgelieferte Screens auf JSON umstellen | 3 | ⬜ offen | |
 | 17 | Konfigurationsmodus | 4 | ⬜ offen | |
@@ -154,7 +155,7 @@ eingeschaltetem „Show mem usage").
 
 Legende: ⬜ offen · 🟡 teilweise · ✅ Tests und alle Builds grün
 
-> **Stand der Prüfung:** `pio test -e native_test` (261 Fälle) und `pio run` für
+> **Stand der Prüfung:** `pio test -e native_test` (264 Fälle) und `pio run` für
 > `esp32-Rev1toRev4`, `esp32-s3-Rev5andHigher`, beide Testboard-Environments und
 > `linux_64bit` laufen auf jedem Branch durch.
 >
