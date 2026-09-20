@@ -64,6 +64,14 @@ void getKeys(rawKey (*rawKeys)[keypadCOLS], unsigned long currentMillis);
   presses from an image map rather than from rows and columns.
 */
 bool get_keypadMatrix(char (*matrix)[keypadCOLS]);
+/*
+  Replaces the layout, for keys.json. Returns false where there is no matrix to
+  replace (the simulator).
+
+  Only the mapping from position to key changes - the driver, the pins and the
+  scanning stay exactly as they were.
+*/
+bool set_keypadMatrix(const char (*matrix)[keypadCOLS]);
 #if(OMOTE_HARDWARE_REV >= 5)
 void update_keyboardBrightness(void);
 uint8_t get_keyboardBrightness();

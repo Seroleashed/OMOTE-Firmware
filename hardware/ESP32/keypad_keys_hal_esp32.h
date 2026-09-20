@@ -29,3 +29,6 @@ void keys_getKeys_HAL(void* ptr, unsigned long currentMillis);
 // same keys in reversed row order, which is exactly why keys.json carries the
 // revision - see configScenes.h.
 bool get_keypadMatrix_HAL(char (*matrix)[5]);
+
+// Replaces the layout at runtime, for keys.json.
+bool set_keypadMatrix_HAL(const char (*matrix)[5]);

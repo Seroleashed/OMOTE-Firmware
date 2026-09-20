@@ -4,6 +4,7 @@
 #include <vector>
 #include "applicationInternal/keys.h"
 #include "applicationInternal/gui/guiMemoryOptimizer.h"
+#include "applicationInternal/scenes/sequenceEngine.h"
 
 typedef std::vector<std::string> t_gui_list;
 typedef std::vector<std::string> t_scene_list;
@@ -13,6 +14,19 @@ typedef void (*scene_start_sequence)(void);
 typedef void (*scene_end_sequence)(void);
 typedef t_gui_list *gui_list;
 typedef t_scene_list *scene_list;
+
+/*
+  A scene's sequences are either code or data.
+
+  The scenes compiled into the firmware are functions - they enqueue their steps
+  when called, see scene_TV.cpp. A scene that came out of scenes.json has no
+  function to call: its steps are a list, and a function pointer cannot carry
+  one. So a definition holds both and whichever is set wins, data first.
+
+  The vector belongs to whoever registered the scene and has to outlive it.
+  configLoader keeps the ones it reads from a file.
+*/
+typedef const std::vector<sequenceEngine::Step> *scene_sequence_data;
 
 // https://stackoverflow.com/questions/840501/how-do-function-pointers-in-c-work
 struct scene_definition {
@@ -24,6 +38,8 @@ struct scene_definition {
   key_commands_long this_key_commands_long;
   gui_list this_gui_list;
   uint16_t this_activate_scene_command;
+  scene_sequence_data this_start_sequence_data;
+  scene_sequence_data this_end_sequence_data;
 };
 
 extern std::map<std::string, scene_definition> registered_scenes;
@@ -37,7 +53,9 @@ void register_scene(
   key_commands_short a_key_commands_short,
   key_commands_long a_key_commands_long,
   gui_list a_gui_list = NULL,
-  uint16_t a_activate_scene_command = 0);
+  uint16_t a_activate_scene_command = 0,
+  scene_sequence_data a_start_sequence_data = NULL,
+  scene_sequence_data a_end_sequence_data = NULL);
 
 bool sceneExists(std::string sceneName);
 void scene_start_sequence_from_registry(std::string sceneName);

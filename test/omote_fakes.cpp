@@ -229,6 +229,13 @@ bool get_keypadMatrix(char (*matrix)[keypadCOLS]) {
   }
   return true;
 }
+bool set_keypadMatrix(const char (*matrix)[keypadCOLS]) {
+  // Without a layout to replace, the real hardware layer refuses - and so does
+  // this, so a test can cover the simulator case as well as the device one.
+  if (!fakes::keypadMatrixAvailable) return false;
+  fakes::setKeypadMatrix(matrix);
+  return true;
+}
 #if (OMOTE_HARDWARE_REV >= 5)
 void update_keyboardBrightness(void) {}
 static uint8_t keyboardBrightness = 255;

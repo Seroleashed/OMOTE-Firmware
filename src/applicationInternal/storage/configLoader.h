@@ -94,4 +94,45 @@ SystemResult loadSystem();
 // The network side asks this for the device name and the broker.
 const configModel::SystemConfig &systemConfig();
 
+/*
+  Reads /cfg/scenes.json and registers what it holds.
+
+  Runs after the devices, because a scene refers to commands by name and they
+  have to exist first. A scene whose name matches one compiled into the firmware
+  replaces it - same rule as for devices.
+
+  A step naming a command that does not exist is dropped and counted, the rest
+  of the scene still works: a scene that switches the television on and then
+  selects an input it does not know should still switch the television on.
+
+  The maps, gui lists and sequences of a JSON scene are owned here. They have to
+  outlive the registration, which is why they are not built on the stack.
+*/
+struct ScenesResult {
+  bool fileFound = false;
+  uint16_t scenesLoaded = 0;
+  uint16_t keysBound = 0;
+  uint16_t stepsDropped = 0; // commands the file names but the device does not know
+  std::string error;         // empty unless the file was there and unusable
+};
+
+ScenesResult loadScenes();
+
+/*
+  Reads /cfg/keys.json and replaces the keypad layout.
+
+  Refused outright if the file was written for another hardware revision: Rev5
+  and Rev1-4 hold the same keys in reversed row order, so applying the wrong one
+  mirrors the keypad top to bottom - and the user would be left pressing "up" to
+  go down, with nothing in the log to explain it.
+*/
+struct KeysResult {
+  bool fileFound = false;
+  bool applied = false;
+  bool revisionMismatch = false;
+  std::string error;
+};
+
+KeysResult loadKeys();
+
 } // namespace configLoader

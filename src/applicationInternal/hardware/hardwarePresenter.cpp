@@ -279,3 +279,7 @@ void get_heapUsage(unsigned long *heapSize, unsigned long *freeHeap, unsigned lo
 bool get_keypadMatrix(char (*matrix)[keypadCOLS]) {
   return get_keypadMatrix_HAL(matrix);
 }
+
+bool set_keypadMatrix(const char (*matrix)[keypadCOLS]) {
+  return set_keypadMatrix_HAL(matrix);
+}

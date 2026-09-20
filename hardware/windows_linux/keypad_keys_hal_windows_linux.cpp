@@ -53,3 +53,8 @@ bool get_keypadMatrix_HAL(char (*matrix)[5]) {
   (void)matrix;
   return false;
 }
+
+bool set_keypadMatrix_HAL(const char (*matrix)[5]) {
+  (void)matrix;
+  return false;
+}

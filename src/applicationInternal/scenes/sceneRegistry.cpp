@@ -21,7 +21,9 @@ void register_scene(
   key_commands_short a_key_commands_short,
   key_commands_long a_key_commands_long,
   gui_list a_gui_list,
-  uint16_t a_activate_scene_command) {
+  uint16_t a_activate_scene_command,
+  scene_sequence_data a_start_sequence_data,
+  scene_sequence_data a_end_sequence_data) {
 
   // put the scene_definition in a map that can be accessed by name
   registered_scenes[a_scene_name] = scene_definition{
@@ -32,7 +34,9 @@ void register_scene(
     a_key_commands_short,
     a_key_commands_long,
     a_gui_list,
-    a_activate_scene_command
+    a_activate_scene_command,
+    a_start_sequence_data,
+    a_end_sequence_data
   };
 
   // Additionally, put all registered scenes in a sequence of scenes to be shown in the sceneSelection gui.
@@ -48,9 +52,24 @@ bool sceneExists(std::string sceneName) {
   return (registered_scenes.count(sceneName) > 0);
 }
 
+/*
+  Data first, then the function pointer. A scene out of scenes.json has its
+  steps as a list; one compiled into the firmware has a function that enqueues
+  them. Both end up in the same queue, so a JSON scene and a C++ scene behave
+  identically from here on.
+*/
+static void runSequence(scene_sequence_data data, scene_start_sequence function) {
+  if (data != NULL) {
+    sequenceEngine::enqueue(*data);
+    return;
+  }
+  if (function != NULL) function();
+}
+
 void scene_start_sequence_from_registry(std::string sceneName) {
   try {
-    registered_scenes.at(sceneName).this_scene_start_sequence();
+    const scene_definition &definition = registered_scenes.at(sceneName);
+    runSequence(definition.this_start_sequence_data, definition.this_scene_start_sequence);
   }
   catch (const std::out_of_range& oor) {
     omote_log_e("scene_start_sequence_from_registry: internal error, sceneName not registered\r\n");
@@ -59,7 +78,8 @@ void scene_start_sequence_from_registry(std::string sceneName) {
 
 void scene_end_sequence_from_registry(std::string sceneName) {
   try {
-    registered_scenes.at(sceneName).this_scene_end_sequence();
+    const scene_definition &definition = registered_scenes.at(sceneName);
+    runSequence(definition.this_end_sequence_data, definition.this_scene_end_sequence);
   }
   catch (const std::out_of_range& oor) {
     omote_log_e("scene_end_sequence_from_registry: internal error, sceneName not registered\r\n");

@@ -196,6 +196,12 @@ int main(int argc, char *argv[]) {
     from being right.
   */
   configLoader::loadSystem();
+  /*
+    Scenes and the keypad layout. After the devices on purpose: a scene refers
+    to commands by name, so they have to exist before it can be registered.
+  */
+  configLoader::loadScenes();
+  configLoader::loadKeys();
   #endif
 
   // Register the GUIs. They will be displayed in the order they have been registered.

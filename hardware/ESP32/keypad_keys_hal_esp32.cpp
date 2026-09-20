@@ -263,3 +263,16 @@ bool get_keypadMatrix_HAL(char (*matrix)[keypadCOLS]) {
   }
   return true;
 }
+
+bool set_keypadMatrix_HAL(const char (*matrix)[keypadCOLS]) {
+  for (uint8_t row = 0; row < keypadROWS; row++) {
+    for (uint8_t col = 0; col < keypadCOLS; col++) {
+      #if(OMOTE_HARDWARE_REV >= 5)
+        keypadChars[row][col] = matrix[row][col];
+      #else
+        hexaKeys[row][col] = matrix[row][col];
+      #endif
+    }
+  }
+  return true;
+}
