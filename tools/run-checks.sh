@@ -96,11 +96,25 @@ if [ "$RUN_SIMULATOR" -eq 1 ]; then
   echo
   echo "== simulator =="
   log="$LOG_DIR/simulator.log"
+
+  # Leftovers from an earlier run, started with a plain `timeout` that sent
+  # SIGTERM. The simulator ignores it, timeout then waits forever, and the
+  # program spins at 100% CPU until somebody notices. Five of those once made
+  # the whole machine look like it was hanging, which is why the run below uses
+  # -s KILL and why this sweeps up first.
+  pkill -KILL -f 'build/linux_64bit/program' 2>/dev/null || true
   # -s KILL because the program ignores SIGTERM and would outlive the timeout,
   # stdbuf because a killed process never flushes a block buffered stdout and
   # the log would come out empty - both learned the hard way.
-  SDL_VIDEODRIVER=dummy timeout -s KILL 8 stdbuf -oL -eL \
-    ./.pio/build/linux_64bit/program >"$log" 2>&1 || true
+  # Being killed is the expected end here, but bash announces it with a "Killed"
+  # line that has no business in the summary. An inner shell reaps the process
+  # and reports it to the log instead of the terminal - and the trailing
+  # `exit 0` is what keeps that shell around: bash turns a lone command in
+  # `bash -c` into an exec, and the inner shell would then *be* the process
+  # that gets killed.
+  SDL_VIDEODRIVER=dummy bash -c \
+    "timeout -s KILL 8 stdbuf -oL -eL ./.pio/build/linux_64bit/program; exit 0" \
+    >"$log" 2>&1 || true
 
   errors=$(grep -c 'OMOTE E' "$log" || true)
   lines=$(wc -l <"$log")
