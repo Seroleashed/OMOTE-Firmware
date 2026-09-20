@@ -40,10 +40,33 @@ Regeln:
 - Ein Branch = ein in sich abgeschlossenes Paket = ein Eintrag in der Statusübersicht.
 - Solange ein Paket noch nicht getestet und gemergt ist, zweigt das nächste vom
   **Kopf des Vorgängerbranches** ab (die Pakete bauen fachlich aufeinander auf).
-- Getestet wird jeder Branch **vor** dem Merge nach `main`:
-  `pio test -e native_test` plus `pio run` für alle Environments.
+- Getestet wird jeder Branch **vor** dem Merge nach `main` mit
+  `nix develop --command tools/run-checks.sh` (siehe unten).
 - Nach dem Merge nach `main` rebasen die offenen Folgebranches auf `main`.
 - Zurückrollen: `git checkout feature/<nr-1>-…` bzw. `git revert` des Merge-Commits.
+
+### Prüfen: `tools/run-checks.sh`
+
+```bash
+nix develop --command tools/run-checks.sh          # Tests + alle Environments
+nix develop --command tools/run-checks.sh --tests  # nur Tests, schnelle Runde
+nix develop --command tools/run-checks.sh --sim    # zusätzlich Simulator starten
+```
+
+Das Skript existiert, weil drei Fehler beim Prüfen von Hand teuer waren:
+
+1. **`pio run … | grep …` liefert den Exit-Code von `grep`.** Ein fehlgeschlagener
+   Build meldet damit Erfolg. Das ist einmal passiert und wäre beinahe gemergt worden.
+   Das Skript setzt `set -o pipefail` und gibt einen echten Exit-Code zurück.
+2. **Zwei gleichzeitige `pio`-Läufe streiten um `.pio/build`** und scheitern auf eine
+   Art, die wie ein echter Fehler aussieht. Im Skript läuft alles nacheinander.
+3. **Der Simulator ignoriert SIGTERM und puffert blockweise.** `timeout 6 program >
+   log` liefert deshalb eine leere Datei. Es braucht `timeout -s KILL` **und**
+   `stdbuf -oL` — beides steht im Skript.
+
+Die vollständige Ausgabe landet unter `.pio/checks/<env>.log`; auf dem Terminal steht
+nur die Zusammenfassung. Ein Fehlschlag lässt sich also nachlesen, statt reproduziert
+werden zu müssen.
 
 Aktuelle Branches siehe Spalte „Branch" in der Statusübersicht.
 

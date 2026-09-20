@@ -1,0 +1,122 @@
+#!/usr/bin/env bash
+#
+# Runs everything that has to be green before a branch is merged:
+#
+#     tools/run-checks.sh            # unit tests + every environment
+#     tools/run-checks.sh --tests    # unit tests only, for a quick round
+#     tools/run-checks.sh --sim      # additionally start the simulator once
+#
+# Run it inside the dev shell, or let it put itself there:
+#
+#     nix develop --command tools/run-checks.sh
+#
+# Why a script rather than a command line:
+#
+#   * `pio run ... | grep something` reports the exit code of *grep*, so a
+#     failed build looks like a success. That is not a hypothetical - it
+#     happened, and a broken build was nearly merged because of it. Hence
+#     `set -o pipefail` and an explicit exit code below.
+#   * the full output goes to a log file and only the summary to the terminal,
+#     so a failure can be looked at afterwards instead of having to be
+#     reproduced.
+#   * two `pio` runs on the same project at the same time fight over
+#     .pio/build and fail in ways that look like real errors. Everything here
+#     runs one after the other, on purpose.
+
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+
+LOG_DIR="${LOG_DIR:-.pio/checks}"
+mkdir -p "$LOG_DIR"
+
+ENVIRONMENTS=(
+  esp32-Rev1toRev4
+  esp32-s3-Rev5andHigher
+  esp32_testboard-Rev1toRev4
+  esp32-s3_testboard-Rev5andHigher
+  linux_64bit
+  config_export
+)
+
+TESTS_ONLY=0
+RUN_SIMULATOR=0
+for argument in "$@"; do
+  case "$argument" in
+    --tests) TESTS_ONLY=1 ;;
+    --sim) RUN_SIMULATOR=1 ;;
+    *) echo "unknown option: $argument" >&2; exit 2 ;;
+  esac
+done
+
+failures=0
+
+report() {
+  # $1 = name, $2 = exit code, $3 = log file, $4 = one line of detail
+  if [ "$2" -eq 0 ]; then
+    printf 'ok    %-34s %s\n' "$1" "${4:-}"
+  else
+    printf 'FAIL  %-34s see %s\n' "$1" "$3"
+    failures=$((failures + 1))
+  fi
+}
+
+# --- unit tests --------------------------------------------------------------
+echo "== unit tests =="
+log="$LOG_DIR/native_test.log"
+set +e
+pio test -e native_test >"$log" 2>&1
+status=$?
+set -e
+summary=$(grep -oE '[0-9]+ test cases: [^=]*' "$log" | tail -1 || true)
+report "native_test" "$status" "$log" "$summary"
+
+if [ "$TESTS_ONLY" -eq 1 ]; then
+  echo
+  [ "$failures" -eq 0 ] && echo "all good" || echo "$failures check(s) failed"
+  exit "$failures"
+fi
+
+# --- one build per environment, sequentially ---------------------------------
+echo
+echo "== builds =="
+for environment in "${ENVIRONMENTS[@]}"; do
+  log="$LOG_DIR/$environment.log"
+  set +e
+  pio run -e "$environment" >"$log" 2>&1
+  status=$?
+  set -e
+  # the size line only exists for the firmware builds
+  size=$(grep -oE 'Flash: .*' "$log" | tail -1 || true)
+  report "$environment" "$status" "$log" "$size"
+done
+
+# --- the simulator, if asked -------------------------------------------------
+if [ "$RUN_SIMULATOR" -eq 1 ]; then
+  echo
+  echo "== simulator =="
+  log="$LOG_DIR/simulator.log"
+  # -s KILL because the program ignores SIGTERM and would outlive the timeout,
+  # stdbuf because a killed process never flushes a block buffered stdout and
+  # the log would come out empty - both learned the hard way.
+  SDL_VIDEODRIVER=dummy timeout -s KILL 8 stdbuf -oL -eL \
+    ./.pio/build/linux_64bit/program >"$log" 2>&1 || true
+
+  errors=$(grep -c 'OMOTE E' "$log" || true)
+  lines=$(wc -l <"$log")
+  if [ "$lines" -lt 3 ]; then
+    report "startup" 1 "$log" "only $lines line(s) of output"
+  elif [ "$errors" -ne 0 ]; then
+    report "startup" 1 "$log" "$errors error line(s)"
+  else
+    report "startup" 0 "$log" "$lines lines, no errors"
+  fi
+fi
+
+echo
+if [ "$failures" -eq 0 ]; then
+  echo "all good"
+else
+  echo "$failures check(s) failed"
+fi
+exit "$failures"
