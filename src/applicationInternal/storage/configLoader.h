@@ -5,6 +5,8 @@
 #include <string>
 #include <vector>
 
+#include "applicationInternal/storage/configModel.h"
+
 /*
   Registers devices from /cfg/devices/*.json at startup.
 
@@ -60,5 +62,36 @@ Report loadDevices();
 // The report of the last loadDevices(), for the settings screen and later the
 // web UI. A user needs to be able to find out *why* their device is missing.
 const Report &lastReport();
+
+/*
+  Reads /cfg/system.json and applies what it says: display brightness, sleep
+  behaviour, and the name and broker the network side uses.
+
+  ## Who wins
+
+  If the file exists, it owns the settings it names. They are applied on every
+  start, after the preferences have been restored - so a `push` of a new
+  system.json takes effect on the next boot, and stays.
+
+  That has a rough edge worth knowing about: a brightness changed with the
+  slider on the device survives until the next restart, and then the file wins
+  again. It is the predictable rule of the two, and it only applies at all to
+  somebody who deliberately put a file there. Step 18 closes the loop by having
+  the web UI write the file rather than the preferences.
+
+  Fields the file does not mention keep whatever the preferences had, so a
+  system.json with only a brightness in it does exactly that one thing.
+*/
+struct SystemResult {
+  bool fileFound = false;
+  bool applied = false;
+  std::string error; // empty unless the file was there and unusable
+};
+
+SystemResult loadSystem();
+
+// What the last loadSystem() ended up with, file or compiled-in defaults.
+// The network side asks this for the device name and the broker.
+const configModel::SystemConfig &systemConfig();
 
 } // namespace configLoader

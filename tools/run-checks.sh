@@ -102,7 +102,11 @@ if [ "$RUN_SIMULATOR" -eq 1 ]; then
   # program spins at 100% CPU until somebody notices. Five of those once made
   # the whole machine look like it was hanging, which is why the run below uses
   # -s KILL and why this sweeps up first.
-  pkill -KILL -f 'build/linux_64bit/program' 2>/dev/null || true
+  # Anchored to the start of the command line on purpose. An unanchored
+  # `pkill -f` also matches any *shell* whose command line happens to mention
+  # the program - including the one running this script, which then kills
+  # itself and silently skips everything below.
+  pkill -KILL -f '^\.?/?\.pio/build/linux_64bit/program' 2>/dev/null || true
   # -s KILL because the program ignores SIGTERM and would outlive the timeout,
   # stdbuf because a killed process never flushes a block buffered stdout and
   # the log would come out empty - both learned the hard way.

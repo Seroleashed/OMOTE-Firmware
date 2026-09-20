@@ -189,6 +189,13 @@ int main(int argc, char *argv[]) {
     From here on a new IR device needs no compiler.
   */
   configLoader::loadDevices();
+  /*
+    And the settings from /cfg/system.json. After init_preferences(), so the
+    file is applied on top of what the user set on the device - and after the
+    devices, because a broken device file must not stop the display brightness
+    from being right.
+  */
+  configLoader::loadSystem();
   #endif
 
   // Register the GUIs. They will be displayed in the order they have been registered.

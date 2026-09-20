@@ -2,6 +2,7 @@
 
 #include "applicationInternal/bootGuard.h"
 #include "applicationInternal/commandHandler.h"
+#include "applicationInternal/hardware/hardwarePresenter.h"
 #include "applicationInternal/omote_log.h"
 #include "applicationInternal/storage/configFile.h"
 #include "applicationInternal/storage/configFileSystem.h"
@@ -140,6 +141,102 @@ Report loadDevices() {
                 (unsigned)report.filesFailed);
   }
   return report;
+}
+
+// --- system.json -------------------------------------------------------------
+
+static configModel::SystemConfig activeSystemConfig;
+static bool systemConfigLoaded = false;
+
+const configModel::SystemConfig &systemConfig() {
+  if (!systemConfigLoaded) {
+    activeSystemConfig = configModel::defaultSystemConfig();
+    systemConfigLoaded = true;
+  }
+  return activeSystemConfig;
+}
+
+/*
+  Reads the file into the values the device is running with, rather than into a
+  fresh struct. parseSystemConfig leaves anything the file does not mention
+  untouched, so a system.json holding only a brightness does exactly that one
+  thing and nothing else.
+*/
+static bool readSystemFile(configModel::SystemConfig &into, std::string &error) {
+  ConfigFileSystem *fileSystem = configStorage::fileSystem();
+  if (fileSystem == NULL) return false;
+
+  configStorage::LoadedConfig stored = configStorage::load(configFile::PATH_SYSTEM);
+  std::string payload;
+
+  if (stored.usable()) {
+    if (stored.result == configStorage::LoadResult::OkFromBackup) {
+      omote_log_w("configLoader: %s was broken, used the backup\r\n", configFile::PATH_SYSTEM);
+    }
+    payload = stored.payload;
+  } else {
+    if (!fileSystem->read(configFile::PATH_SYSTEM, payload)) return false; // simply not there
+    if (configStorage::looksLikeEnvelope(payload)) {
+      error = "damaged: the checksum does not match and the backup is unusable either";
+      return true; // the file is there, it is just unusable
+    }
+  }
+
+  std::string parseError;
+  if (!configModel::parseSystemConfig(payload, into, parseError)) {
+    error = parseError;
+    return true;
+  }
+  return true;
+}
+
+SystemResult loadSystem() {
+  SystemResult result;
+
+  activeSystemConfig = configModel::defaultSystemConfig();
+  systemConfigLoaded = true;
+
+  if (bootGuard::isSafeMode()) {
+    omote_log_w("configLoader: safe mode, %s is not read\r\n", configFile::PATH_SYSTEM);
+    return result;
+  }
+
+  // Start from what the device is actually running with, not from the compiled
+  // defaults: the preferences hold what the user set on the device, and a file
+  // that says nothing about brightness must not reset it.
+  activeSystemConfig.backlightBrightness = get_backlightBrightness();
+#if (OMOTE_HARDWARE_REV >= 5)
+  activeSystemConfig.keyboardBrightness = get_keyboardBrightness();
+#endif
+  activeSystemConfig.sleepTimeoutMs = get_sleepTimeout();
+  activeSystemConfig.wakeupByIMU = get_wakeupByIMUEnabled();
+  activeSystemConfig.motionThreshold = get_motionThreshold();
+
+  result.fileFound = readSystemFile(activeSystemConfig, result.error);
+  if (!result.fileFound) {
+    omote_log_i("configLoader: no %s, using the settings on the device\r\n", configFile::PATH_SYSTEM);
+    return result;
+  }
+  if (!result.error.empty()) {
+    // Nothing is applied. A file nobody can read must not leave the device with
+    // half of it in place.
+    omote_log_e("configLoader: %s was skipped: %s\r\n", configFile::PATH_SYSTEM, result.error.c_str());
+    activeSystemConfig = configModel::defaultSystemConfig();
+    return result;
+  }
+
+  set_backlightBrightness(activeSystemConfig.backlightBrightness);
+#if (OMOTE_HARDWARE_REV >= 5)
+  set_keyboardBrightness(activeSystemConfig.keyboardBrightness);
+#endif
+  set_sleepTimeout(activeSystemConfig.sleepTimeoutMs);
+  set_wakeupByIMUEnabled(activeSystemConfig.wakeupByIMU);
+  set_motionThreshold(activeSystemConfig.motionThreshold);
+
+  result.applied = true;
+  omote_log_i("configLoader: %s applied, device name '%s'\r\n", configFile::PATH_SYSTEM,
+              activeSystemConfig.deviceName.c_str());
+  return result;
 }
 
 } // namespace configLoader
