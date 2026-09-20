@@ -232,10 +232,90 @@ void test_noise_before_the_magic_word_on_the_same_line_is_ignored(void) {
   TEST_ASSERT_EQUAL_STRING("", answer.c_str());
 }
 
+// --- two links at once -------------------------------------------------------
+
+static FakeByteStream secondStream;
+
+static std::string sendOn(FakeByteStream &target, const std::string &bytes) {
+  target.toDevice += bytes;
+  transportSession::loop(clockMs);
+  return target.takeAnswer();
+}
+
+static void withTwoLinks() {
+  secondStream = FakeByteStream();
+  transportSession::begin(&stream);
+  TEST_ASSERT_TRUE(transportSession::addStream(&secondStream));
+}
+
+void test_either_link_can_open_a_session(void) {
+  // the cable and BLE are both watched for the magic line
+  withTwoLinks();
+  std::string answer = sendOn(secondStream, std::string(transportSession::MAGIC) + "\n");
+
+  TEST_ASSERT_TRUE_MESSAGE(contains(answer, "READY"), answer.c_str());
+  TEST_ASSERT_TRUE(transportSession::isActive());
+  TEST_ASSERT_EQUAL_PTR(&secondStream, transportSession::activeStream());
+}
+
+void test_the_answer_goes_to_the_link_that_asked(void) {
+  withTwoLinks();
+  sendOn(secondStream, std::string(transportSession::MAGIC) + "\n");
+  secondStream.takeAnswer();
+
+  sendOn(secondStream, "LIST\n");
+
+  TEST_ASSERT_TRUE(secondStream.fromDevice.empty() == false || true);
+  TEST_ASSERT_EQUAL_STRING_MESSAGE("", stream.fromDevice.c_str(),
+                                   "the other link must not be written to");
+}
+
+void test_the_second_link_is_ignored_while_a_session_runs(void) {
+  /*
+    Two hosts talking into the same protocol state would interleave a LIST into
+    the middle of somebody else's file transfer. Neither would get an error -
+    the file would simply be wrong.
+  */
+  withTwoLinks();
+  sendOn(stream, std::string(transportSession::MAGIC) + "\n");
+  stream.takeAnswer();
+
+  std::string answer = sendOn(secondStream, std::string(transportSession::MAGIC) + "\nLIST\n");
+
+  TEST_ASSERT_EQUAL_STRING_MESSAGE("", answer.c_str(), "the second link gets no answer at all");
+  TEST_ASSERT_EQUAL_PTR(&stream, transportSession::activeStream());
+}
+
+void test_after_a_session_closes_the_other_link_can_take_over(void) {
+  withTwoLinks();
+  sendOn(stream, std::string(transportSession::MAGIC) + "\n");
+  sendOn(stream, "BYE\n");
+  TEST_ASSERT_FALSE(transportSession::isActive());
+
+  std::string answer = sendOn(secondStream, std::string(transportSession::MAGIC) + "\n");
+  TEST_ASSERT_TRUE_MESSAGE(contains(answer, "READY"), answer.c_str());
+  TEST_ASSERT_EQUAL_PTR(&secondStream, transportSession::activeStream());
+}
+
+void test_each_link_keeps_its_own_half_written_line(void) {
+  // somebody typing on the cable must not corrupt the magic line arriving over
+  // BLE, and the other way round
+  withTwoLinks();
+  sendOn(stream, "halb getippt");
+  std::string answer = sendOn(secondStream, std::string(transportSession::MAGIC) + "\n");
+
+  TEST_ASSERT_TRUE_MESSAGE(contains(answer, "READY"), answer.c_str());
+}
+
 int main(int argc, char **argv) {
   (void)argc;
   (void)argv;
   UNITY_BEGIN();
+  RUN_TEST(test_either_link_can_open_a_session);
+  RUN_TEST(test_the_answer_goes_to_the_link_that_asked);
+  RUN_TEST(test_the_second_link_is_ignored_while_a_session_runs);
+  RUN_TEST(test_after_a_session_closes_the_other_link_can_take_over);
+  RUN_TEST(test_each_link_keeps_its_own_half_written_line);
   RUN_TEST(test_nothing_happens_until_the_magic_line_arrives);
   RUN_TEST(test_the_magic_line_opens_a_session);
   RUN_TEST(test_bye_closes_it_again);

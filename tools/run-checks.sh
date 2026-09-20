@@ -33,6 +33,10 @@ mkdir -p "$LOG_DIR"
 ENVIRONMENTS=(
   esp32-Rev1toRev4
   esp32-s3-Rev5andHigher
+  # the BLE configuration transport. Here because it is the only check that
+  # code gets - NimBLE does not exist in the simulator, so it cannot be run at
+  # all without hardware. At least it has to compile.
+  esp32-s3-Rev5andHigher-ble
   esp32_testboard-Rev1toRev4
   esp32-s3_testboard-Rev5andHigher
   linux_64bit

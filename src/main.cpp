@@ -270,6 +270,12 @@ int main(int argc, char *argv[]) {
     transportCallbacks.info = &transportInfoLines;
     configTransport::begin(get_configFileSystem(), transportCallbacks);
     transportSession::begin(get_transportByteStream());
+    #if (ENABLE_BLE_CONFIG == 1)
+    // a second way in, next to the cable. Whichever sends the magic line first
+    // owns the session until it closes.
+    init_bleTransport_HAL();
+    transportSession::addStream(get_bleTransportByteStream());
+    #endif
   }
 
   omote_log_i("Setup finished in %lu ms.\r\n", millis());

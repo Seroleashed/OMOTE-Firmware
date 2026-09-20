@@ -56,10 +56,27 @@ public:
   virtual void write(const std::string &bytes) = 0;
 };
 
+// How many links can be waiting for a host at once. Two today: the serial port
+// and BLE.
+const size_t MAX_STREAMS = 3;
+
 void begin(ByteStream *stream);
+// A second way in - BLE next to the cable. Both are watched for the magic line.
+bool addStream(ByteStream *stream);
+
 void loop(unsigned long currentMillis);
 
 bool isActive();
+/*
+  Which link the running session belongs to, or NULL.
+
+  A session belongs to the stream that opened it, and the others are left alone
+  until it closes. Two hosts talking into the same protocol state would
+  interleave a LIST into the middle of somebody else's file transfer, and
+  neither would get an error - the file would just be wrong.
+*/
+ByteStream *activeStream();
+
 // ends a running session and unmutes the log. For a link that went away.
 void close();
 
@@ -68,3 +85,10 @@ void close();
 // provided by the active hardware layer: Serial on the device, a TCP socket on
 // localhost in the simulator
 transportSession::ByteStream *get_transportByteStream();
+
+#if (ENABLE_BLE_CONFIG == 1)
+// The BLE service next to the HID keyboard. Only on the ESP32 - NimBLE does
+// not exist in the simulator.
+void init_bleTransport_HAL();
+transportSession::ByteStream *get_bleTransportByteStream();
+#endif
