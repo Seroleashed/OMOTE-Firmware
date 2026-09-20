@@ -91,6 +91,7 @@ springt die Prozentzahl dort, obwohl die Firmware kaum wächst.
 | `feature/10` Zugangsdaten | 2.021.457 (64,3 %) | 101.132 | 1.918.453 (36,6 %) | 63.864 |
 | `feature/11` Transport | 2.022.057 (64,3 %) | 101.132 | 1.919.057 (36,6 %) | 63.864 |
 | `feature/12` USB + omotectl | 2.035.521 (64,7 %) | — | 1.932.741 (36,9 %) | — |
+| `feature/13` system.json wirkt | 2.035.841 (64,7 %) | — | 1.933.061 (36,9 %) | — |
 
 ⚠️ Schritt 7 kostet **20,6 KB Flash** — der größte Sprung seit Phase 0. Grund ist der
 Serial-Dump im Settings-Screen: er zieht `configExport` samt Serialisierung aller vier
@@ -129,6 +130,8 @@ eingeschaltetem „Show mem usage").
 | 10 | Zugangsdaten im NVS | 1 | ✅ getestet | `feature/10-credentials-nvs` |
 | 11 | Transport-Abstraktion | 2 | ✅ getestet | `feature/11-transport` |
 | 12 | USB-Transport plus Host-Werkzeug | 2 | ✅ gegen Simulator verifiziert | `feature/12-usb-transport` |
+| 8b | `system.json` anwenden | 1 | ✅ gegen Simulator verifiziert | `feature/13-apply-system-config` |
+| 8c | `scenes.json` und `keys.json` anwenden | 1 | ⬜ offen | |
 | 13 | BLE-Transport | 2 | ⬜ offen | |
 | 14 | Gerätepakete | 2 | ⬜ offen | |
 | 15 | JSON→LVGL-Renderer | 3 | ⬜ offen | |
@@ -148,7 +151,7 @@ eingeschaltetem „Show mem usage").
 
 Legende: ⬜ offen · 🟡 teilweise · ✅ Tests und alle Builds grün
 
-> **Stand der Prüfung:** `pio test -e native_test` (233 Fälle) und `pio run` für
+> **Stand der Prüfung:** `pio test -e native_test` (242 Fälle) und `pio run` für
 > `esp32-Rev1toRev4`, `esp32-s3-Rev5andHigher`, beide Testboard-Environments und
 > `linux_64bit` laufen auf jedem Branch durch.
 >
