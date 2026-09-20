@@ -5,7 +5,8 @@
     "id": "samsungbluray",
     "name": "Samsung Blu-ray player",
     "manufacturer": "Samsung",
-    "model": ""
+    "model": "",
+    "protocol": "IR:56"
   },
   "commands": [
     {

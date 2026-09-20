@@ -32,7 +32,20 @@ struct DeviceSelector {
   std::string namePrefix;  // "SAMSUNG_", selects the commands
   std::string manufacturer;
   std::string model;
+  std::string author;
+  std::string notes;
 };
+
+/*
+  Which IR protocol a pack uses, for the metadata.
+
+  Worked out from the commands rather than asked for: the protocol is already
+  in every IR payload, and a field somebody has to fill in by hand is a field
+  that ends up wrong. Returns an empty string for a device that is not IR, and
+  "mixed" for one that uses more than one - which is rare but real, some
+  receivers answer to two.
+*/
+std::string protocolOf(const configModel::DevicePack &pack);
 
 // One device pack per selector, taking the commands from the live registry.
 configModel::DevicePack devicePack(const DeviceSelector &selector);

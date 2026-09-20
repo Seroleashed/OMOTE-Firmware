@@ -61,11 +61,26 @@ struct CommandDef {
   std::list<std::string> payloads;
 };
 
+/*
+  A device pack is what gets shared. The metadata exists for the person at the
+  other end, not for the firmware: nothing here changes what the device does,
+  but "Samsung UE32EH5300, NEC protocol, by someone, revision 3" is the
+  difference between a usable file and forty IR codes with no provenance.
+
+  All of it is optional. A pack written before these fields existed still loads,
+  and one written by hand with nothing but an id and its commands is valid.
+*/
 struct DevicePack {
   std::string id;
   std::string name;
   std::string manufacturer;
   std::string model;
+
+  std::string author;      // whoever captured the codes
+  std::string protocol;    // "NEC", "SAMSUNG" - for a human scanning a list
+  std::string notes;       // "works on the 2019 models too"
+  uint16_t packRevision = 0; // bumped by whoever edits the pack, not by us
+
   std::vector<CommandDef> commands;
 };
 

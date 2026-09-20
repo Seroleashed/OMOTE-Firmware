@@ -49,6 +49,12 @@ std::string serializeDevicePack(const DevicePack &pack) {
   device["name"] = pack.name;
   device["manufacturer"] = pack.manufacturer;
   device["model"] = pack.model;
+  // Written only when set. An empty "author": "" in every shared file would be
+  // noise, and a reader cannot tell it from "the author is unknown" anyway.
+  if (!pack.author.empty()) device["author"] = pack.author;
+  if (!pack.protocol.empty()) device["protocol"] = pack.protocol;
+  if (!pack.notes.empty()) device["notes"] = pack.notes;
+  if (pack.packRevision > 0) device["packRevision"] = pack.packRevision;
 
   JsonArray commands = doc["commands"].to<JsonArray>();
   for (const CommandDef &command : pack.commands) {
@@ -94,6 +100,13 @@ bool parseDevicePack(const std::string &json, DevicePack &pack, std::string &err
   pack.manufacturer =
       device["manufacturer"].is<const char *>() ? device["manufacturer"].as<std::string>() : "";
   pack.model = device["model"].is<const char *>() ? device["model"].as<std::string>() : "";
+  // metadata for whoever receives the pack. Missing is normal, not an error:
+  // a pack written before these fields existed still has to load.
+  pack.author = device["author"].is<const char *>() ? device["author"].as<std::string>() : "";
+  pack.protocol = device["protocol"].is<const char *>() ? device["protocol"].as<std::string>() : "";
+  pack.notes = device["notes"].is<const char *>() ? device["notes"].as<std::string>() : "";
+  pack.packRevision =
+      device["packRevision"].is<uint16_t>() ? device["packRevision"].as<uint16_t>() : 0;
 
   JsonArrayConst commands = doc["commands"];
   if (commands.isNull()) {

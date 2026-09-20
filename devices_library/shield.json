@@ -5,7 +5,8 @@
     "id": "shield",
     "name": "NVIDIA Shield",
     "manufacturer": "NVIDIA",
-    "model": ""
+    "model": "",
+    "protocol": "NEC"
   },
   "commands": [
     {

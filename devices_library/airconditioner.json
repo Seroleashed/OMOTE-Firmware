@@ -5,7 +5,8 @@
     "id": "airconditioner",
     "name": "Air conditioner",
     "manufacturer": "De'Longhi",
-    "model": "PAC N81"
+    "model": "PAC N81",
+    "protocol": "NEC"
   },
   "commands": [
     {

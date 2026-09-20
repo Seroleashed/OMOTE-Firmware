@@ -229,6 +229,73 @@ def do_put(link: Link, path: str, payload: bytes) -> None:
         raise ProtocolError(final[4:])
 
 
+# --- device packs -------------------------------------------------------------
+
+
+def describe_pack(document: dict) -> str:
+    device = document.get("device", {})
+    parts = [device.get("name") or device.get("id", "?")]
+    for field in ("manufacturer", "model", "protocol"):
+        if device.get(field):
+            parts.append(str(device[field]))
+    if device.get("author"):
+        parts.append(f"by {device['author']}")
+    if device.get("packRevision"):
+        parts.append(f"rev {device['packRevision']}")
+    return "  ".join(parts)
+
+
+def diff_packs(incoming: dict, existing: dict | None) -> tuple[list, list, list]:
+    """What importing `incoming` would do: (added, changed, removed).
+
+    Nothing on the device is touched to work this out - it is the file that is
+    already there, pulled and compared here. Somebody about to replace forty IR
+    codes deserves to see which ones before it happens, not after.
+    """
+    def by_name(document: dict | None) -> dict:
+        if not document:
+            return {}
+        return {c["name"]: c for c in document.get("commands", [])}
+
+    new, old = by_name(incoming), by_name(existing)
+    added = sorted(set(new) - set(old))
+    removed = sorted(set(old) - set(new))
+    changed = sorted(
+        name
+        for name in set(new) & set(old)
+        if new[name].get("payloads") != old[name].get("payloads")
+        or new[name].get("handler") != old[name].get("handler")
+    )
+    return added, changed, removed
+
+
+def fetch_existing(link: Link, path: str) -> dict | None:
+    try:
+        return json.loads(do_get(link, path))
+    except (ProtocolError, json.JSONDecodeError):
+        return None  # not there yet, or unreadable - either way there is nothing to compare
+
+
+def show_device_preview(link: Link | None, document: dict, path: str) -> tuple[list, list, list]:
+    print(describe_pack(document))
+    print(f"  target  {path}")
+
+    existing = fetch_existing(link, path) if link else None
+    if existing is None:
+        count = len(document.get("commands", []))
+        print(f"  new device, {count} command(s)")
+        return ([c["name"] for c in document.get("commands", [])], [], [])
+
+    added, changed, removed = diff_packs(document, existing)
+    print(f"  replaces the device already there ({len(existing.get('commands', []))} command(s))")
+    for label, names in (("+", added), ("~", changed), ("-", removed)):
+        for name in names:
+            print(f"    {label} {name}")
+    if not (added or changed or removed):
+        print("    no change")
+    return added, changed, removed
+
+
 def target_path_for(payload: bytes, override: str | None) -> str:
     if override:
         return override
@@ -270,6 +337,18 @@ def build_parser() -> argparse.ArgumentParser:
     push.add_argument("--to", help="override the target path")
     remove = commands.add_parser("rm")
     remove.add_argument("paths", nargs="+")
+
+    device = commands.add_parser("device", help="work with a single device pack")
+    device_commands = device.add_subparsers(dest="device_command", required=True)
+    device_commands.add_parser("list", help="the devices on the remote")
+    show = device_commands.add_parser("show", help="what importing this file would change")
+    show.add_argument("file")
+    import_pack = device_commands.add_parser("import")
+    import_pack.add_argument("file")
+    import_pack.add_argument("--yes", action="store_true", help="do not ask")
+    export_pack = device_commands.add_parser("export")
+    export_pack.add_argument("device_id")
+    export_pack.add_argument("--to", help="default: <id>.json in the current folder")
     return parser
 
 
@@ -319,6 +398,51 @@ def main() -> int:
             for path in arguments.paths:
                 link.command(f"DEL {path}")
                 print(f"deleted  {path}")
+
+        elif arguments.command == "device":
+            if arguments.device_command == "list":
+                for path, size in do_list(link):
+                    if not path.startswith("/cfg/devices/"):
+                        continue
+                    try:
+                        document = json.loads(do_get(link, path))
+                    except (ProtocolError, json.JSONDecodeError):
+                        print(f"{path}  (unreadable)")
+                        continue
+                    count = len(document.get("commands", []))
+                    print(f"{count:4d} cmds  {describe_pack(document)}")
+
+            elif arguments.device_command == "show":
+                document = json.loads(Path(arguments.file).read_bytes())
+                show_device_preview(link, document, target_path_for(
+                    Path(arguments.file).read_bytes(), None))
+
+            elif arguments.device_command == "import":
+                payload = Path(arguments.file).read_bytes()
+                document = json.loads(payload)
+                path = target_path_for(payload, None)
+                added, changed, removed = show_device_preview(link, document, path)
+
+                # Replacing somebody's hand-captured codes is not something to
+                # do because a file happened to have the same id.
+                if (changed or removed) and not arguments.yes:
+                    answer = input("  replace? [y/N] ").strip().lower()
+                    if answer not in ("y", "j"):
+                        print("  cancelled")
+                        link.end_session()
+                        return 1
+
+                do_put(link, path, payload)
+                print(f"  imported, {len(added)} added, {len(changed)} changed, "
+                      f"{len(removed)} removed")
+                print("  takes effect on the next start")
+
+            elif arguments.device_command == "export":
+                path = f"/cfg/devices/{arguments.device_id}.json"
+                payload = do_get(link, path)
+                destination = Path(arguments.to or f"{arguments.device_id}.json")
+                destination.write_bytes(payload)
+                print(f"{len(payload):8d}  {path} -> {destination}")
 
         link.end_session()
         return 0

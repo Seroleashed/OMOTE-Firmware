@@ -5,7 +5,8 @@
     "id": "lgbluray",
     "name": "LG Blu-ray player",
     "manufacturer": "LG",
-    "model": ""
+    "model": "",
+    "protocol": "SAMSUNG"
   },
   "commands": [
     {

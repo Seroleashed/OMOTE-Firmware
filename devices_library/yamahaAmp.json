@@ -5,7 +5,8 @@
     "id": "yamahaAmp",
     "name": "Yamaha amplifier",
     "manufacturer": "Yamaha",
-    "model": ""
+    "model": "",
+    "protocol": "NEC"
   },
   "commands": [
     {

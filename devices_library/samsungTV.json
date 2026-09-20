@@ -5,7 +5,8 @@
     "id": "samsungTV",
     "name": "Samsung TV",
     "manufacturer": "Samsung",
-    "model": "UE32EH5300"
+    "model": "UE32EH5300",
+    "protocol": "SAMSUNG"
   },
   "commands": [
     {

@@ -5,7 +5,8 @@
     "id": "lgTV",
     "name": "LG TV",
     "manufacturer": "LG",
-    "model": ""
+    "model": "",
+    "protocol": "NEC"
   },
   "commands": [
     {

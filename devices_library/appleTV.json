@@ -5,7 +5,8 @@
     "id": "appleTV",
     "name": "Apple TV",
     "manufacturer": "Apple",
-    "model": ""
+    "model": "",
+    "protocol": "mixed"
   },
   "commands": [
     {

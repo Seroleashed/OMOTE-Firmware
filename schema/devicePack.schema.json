@@ -20,7 +20,11 @@
         },
         "name": { "type": "string" },
         "manufacturer": { "type": "string" },
-        "model": { "type": "string" }
+        "model": { "type": "string" },
+        "author": { "type": "string", "description": "Whoever captured the codes." },
+        "protocol": { "type": "string", "description": "For a human scanning a list of packs - the firmware reads the protocol out of each command's payload." },
+        "notes": { "type": "string" },
+        "packRevision": { "type": "integer", "minimum": 0, "description": "Bumped by whoever edits the pack. Not the schema version." }
       }
     },
     "commands": {

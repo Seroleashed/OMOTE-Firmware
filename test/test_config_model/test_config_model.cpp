@@ -176,6 +176,49 @@ void test_unknown_extra_fields_are_ignored(void) {
 
 // --- export of the compiled-in configuration ---------------------------------
 
+void test_pack_metadata_survives_a_round_trip(void) {
+  // the fields exist for whoever receives the pack, and a shared file that
+  // loses its provenance on the way is worse than one without any
+  configModel::DevicePack written = makeSamsungPack();
+  written.author = "someone";
+  written.protocol = "NEC";
+  written.notes = "works on the 2019 models too";
+  written.packRevision = 3;
+
+  configModel::DevicePack read;
+  std::string error;
+  TEST_ASSERT_TRUE_MESSAGE(
+      configModel::parseDevicePack(configModel::serializeDevicePack(written), read, error),
+      error.c_str());
+
+  TEST_ASSERT_EQUAL_STRING("someone", read.author.c_str());
+  TEST_ASSERT_EQUAL_STRING("NEC", read.protocol.c_str());
+  TEST_ASSERT_EQUAL_STRING("works on the 2019 models too", read.notes.c_str());
+  TEST_ASSERT_EQUAL_UINT16(3, read.packRevision);
+}
+
+void test_a_pack_without_metadata_still_loads(void) {
+  // packs written before these fields existed, and packs written by hand
+  std::string json = "{\"schemaVersion\":1,\"type\":\"omote.devicePack\","
+                     "\"device\":{\"id\":\"tv\"},"
+                     "\"commands\":[{\"name\":\"TV_POWER\",\"handler\":\"IR\","
+                     "\"payloads\":[\"3\",\"0xAB\"]}]}";
+
+  configModel::DevicePack read;
+  std::string error;
+  TEST_ASSERT_TRUE_MESSAGE(configModel::parseDevicePack(json, read, error), error.c_str());
+  TEST_ASSERT_EQUAL_STRING("", read.author.c_str());
+  TEST_ASSERT_EQUAL_UINT16(0, read.packRevision);
+}
+
+void test_empty_metadata_is_not_written_at_all(void) {
+  // an empty "author": "" in every shared file is noise, and a reader cannot
+  // tell it from "unknown" anyway
+  std::string json = configModel::serializeDevicePack(makeSamsungPack());
+  TEST_ASSERT_TRUE(json.find("author") == std::string::npos);
+  TEST_ASSERT_TRUE(json.find("packRevision") == std::string::npos);
+}
+
 void test_registered_commands_can_be_exported(void) {
   uint16_t power = 0, volUp = 0, otherDevice = 0;
   register_command_withName(&power, makeCommandData(IR, {"7", "0xE0E040BF"}), "samsungTV.power");
@@ -240,6 +283,9 @@ int main(int argc, char **argv) {
   RUN_TEST(test_unknown_handler_is_rejected_and_names_the_command);
   RUN_TEST(test_command_without_payloads_is_rejected);
   RUN_TEST(test_unknown_extra_fields_are_ignored);
+  RUN_TEST(test_pack_metadata_survives_a_round_trip);
+  RUN_TEST(test_a_pack_without_metadata_still_loads);
+  RUN_TEST(test_empty_metadata_is_not_written_at_all);
   RUN_TEST(test_registered_commands_can_be_exported);
   RUN_TEST(test_export_without_prefix_takes_every_named_command);
   RUN_TEST(test_export_save_reboot_load_import);

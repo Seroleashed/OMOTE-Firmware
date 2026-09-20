@@ -1,6 +1,9 @@
 #include "applicationInternal/storage/configExport.h"
 
+#include <stdlib.h>
+
 #include "applicationInternal/commandHandler.h"
+#include "applicationInternal/hardware/IRremoteProtocols.h"
 #include "applicationInternal/hardware/hardwarePresenter.h"
 #include "applicationInternal/keyNames.h"
 #include "applicationInternal/omote_log.h"
@@ -15,11 +18,59 @@ const char *const END_MARKER = "===== END ";
 
 static bool unexportableSequences = false;
 
+/*
+  Names for the protocols that actually turn up, and the number for the rest.
+
+  IRremoteProtocols.h holds about 120 of them and promises never to reorder the
+  list, so the numbers are stable. Spelling all 120 out here would be a table
+  nobody maintains; these are the ones in the shipped device library plus the
+  common neighbours. Anything else comes out as "IR:56", which is at least
+  honest and still tells a reader that two packs use the same thing.
+*/
+static std::string irProtocolName(int protocol) {
+  switch (protocol) {
+    case IR_PROTOCOL_RC5: return "RC5";
+    case IR_PROTOCOL_RC6: return "RC6";
+    case IR_PROTOCOL_NEC: return "NEC";
+    case IR_PROTOCOL_SONY: return "SONY";
+    case IR_PROTOCOL_PANASONIC: return "PANASONIC";
+    case IR_PROTOCOL_JVC: return "JVC";
+    case IR_PROTOCOL_SAMSUNG: return "SAMSUNG";
+    case IR_PROTOCOL_LG: return "LG";
+    case IR_PROTOCOL_SHARP: return "SHARP";
+    case IR_PROTOCOL_DENON: return "DENON";
+    default: return "IR:" + std::to_string(protocol);
+  }
+}
+
+std::string protocolOf(const configModel::DevicePack &pack) {
+  std::string found;
+  for (size_t i = 0; i < pack.commands.size(); i++) {
+    if (pack.commands[i].handler != IR) continue;
+    if (pack.commands[i].payloads.empty()) continue;
+
+    // the protocol is the first payload of an IR command
+    std::string name = irProtocolName(atoi(pack.commands[i].payloads.front().c_str()));
+    if (found.empty()) {
+      found = name;
+    } else if (found != name) {
+      // rare but real: some receivers answer to two
+      return "mixed";
+    }
+  }
+  return found;
+}
+
 configModel::DevicePack devicePack(const DeviceSelector &selector) {
   configModel::DevicePack pack = configModel::devicePackFromRegisteredCommands(
       selector.deviceId, selector.displayName, selector.namePrefix);
   pack.manufacturer = selector.manufacturer;
   pack.model = selector.model;
+  pack.author = selector.author;
+  pack.notes = selector.notes;
+  // worked out from the commands rather than asked for - a field somebody has
+  // to fill in by hand is a field that ends up wrong
+  pack.protocol = protocolOf(pack);
   return pack;
 }
 
