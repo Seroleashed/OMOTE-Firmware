@@ -6,6 +6,8 @@
 #include "applicationInternal/bootGuard.h"
 #include "applicationInternal/commandHandler.h"
 #include "applicationInternal/hardware/hardwarePresenter.h"
+#include "applicationInternal/gui/guiRegistry.h"
+#include "applicationInternal/gui/uiRenderer.h"
 #include "applicationInternal/keyNames.h"
 #include "applicationInternal/omote_log.h"
 #include "applicationInternal/scenes/sceneRegistry.h"
@@ -14,6 +16,7 @@
 #include "applicationInternal/storage/configFileSystem.h"
 #include "applicationInternal/storage/configModel.h"
 #include "applicationInternal/storage/configScenes.h"
+#include "applicationInternal/storage/configUi.h"
 #include "applicationInternal/storage/configStorage.h"
 
 namespace configLoader {
@@ -453,6 +456,77 @@ KeysResult loadKeys() {
 
   result.applied = true;
   omote_log_i("configLoader: %s applied\r\n", configFile::PATH_KEYS);
+  return result;
+}
+
+// --- ui.json -----------------------------------------------------------------
+
+namespace {
+/*
+  The screens read from a file, kept for as long as the device runs.
+
+  A std::map rather than a list: the shared builder below is handed a name and
+  has to find the screen behind it, and that lookup happens every time a tab is
+  created.
+*/
+std::map<std::string, configModel::Screen> ownedScreens;
+} // namespace
+
+/*
+  The one builder every screen from ui.json shares.
+
+  Called by guiMemoryOptimizer when that tab is due, which is also why nothing
+  is drawn at load time: three tabs live at once, not all of them.
+*/
+static void buildScreenFromFile(lv_obj_t *tab, const std::string &guiName) {
+  std::map<std::string, configModel::Screen>::const_iterator found = ownedScreens.find(guiName);
+  if (found == ownedScreens.end()) {
+    omote_log_e("configLoader: screen '%s' was registered but is not here any more\r\n",
+                guiName.c_str());
+    return;
+  }
+  uiRenderer::render(found->second, tab);
+}
+
+UiResult loadUi() {
+  UiResult result;
+
+  if (bootGuard::isSafeMode()) {
+    omote_log_w("configLoader: safe mode, %s is not read\r\n", configFile::PATH_UI);
+    return result;
+  }
+
+  std::string payload;
+  result.fileFound = readConfigFile(configFile::PATH_UI, payload, result.error);
+  if (!result.fileFound || !result.error.empty()) {
+    if (!result.error.empty()) {
+      omote_log_e("configLoader: %s was skipped: %s\r\n", configFile::PATH_UI, result.error.c_str());
+    }
+    return result;
+  }
+
+  configModel::UiConfig config;
+  if (!configModel::parseUi(payload, config, result.error)) {
+    omote_log_e("configLoader: %s was skipped: %s\r\n", configFile::PATH_UI, result.error.c_str());
+    return result;
+  }
+
+  for (size_t i = 0; i < config.screens.size(); i++) {
+    const configModel::Screen &screen = config.screens[i];
+
+    if (registered_guis_byName_map.count(screen.name) > 0) result.screensReplaced++;
+
+    ownedScreens[screen.name] = screen;
+    // No create_tab_content of its own, no setKeys: the widgets are the
+    // content, and a screen from a file has no key map yet - scenes.json is
+    // where keys are bound.
+    register_gui(screen.name, NULL, NULL, NULL, NULL, NULL, NULL, &buildScreenFromFile);
+
+    result.screensLoaded++;
+    omote_log_i("configLoader: screen '%s' with %u widget(s)\r\n", screen.name.c_str(),
+                (unsigned)screen.widgets.size());
+  }
+
   return result;
 }
 

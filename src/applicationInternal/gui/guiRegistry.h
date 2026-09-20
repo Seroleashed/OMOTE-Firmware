@@ -27,6 +27,17 @@ typedef void (*create_tab_content)(lv_obj_t* tab);
 typedef void (*notify_tab_before_delete)(void);
 typedef void (*gui_setKeys)(void);
 
+/*
+  A screen read from ui.json has no function of its own to call: its content is
+  a list of widgets, and a plain function pointer cannot carry one. Every such
+  screen therefore shares a single builder - which has to know *which* screen it
+  is building, so this variant gets the name.
+
+  Same shape as the scene sequences since step 9: a definition holds both kinds
+  and whichever is set wins. Every screen written in C++ stays as it was.
+*/
+typedef void (*create_tab_content_named)(lv_obj_t* tab, const std::string& guiName);
+
 // https://stackoverflow.com/questions/840501/how-do-function-pointers-in-c-work
 struct gui_definition {
   std::string this_name;
@@ -36,6 +47,7 @@ struct gui_definition {
   key_repeatModes this_key_repeatModes;
   key_commands_short this_key_commands_short;
   key_commands_long this_key_commands_long;
+  create_tab_content_named this_create_tab_content_named;
 };
 
 extern std::map<std::string, gui_definition> registered_guis_byName_map;
@@ -47,7 +59,8 @@ void register_gui(
   gui_setKeys a_gui_setKeys = NULL,
   key_repeatModes a_key_repeatModes = NULL,
   key_commands_short a_key_commands_short = NULL,
-  key_commands_long a_key_commands_long = NULL
+  key_commands_long a_key_commands_long = NULL,
+  create_tab_content_named a_create_tab_content_named = NULL
   );
 
 void setKeysForAllRegisteredGUIsAndScenes();

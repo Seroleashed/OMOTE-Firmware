@@ -202,6 +202,9 @@ int main(int argc, char *argv[]) {
   */
   configLoader::loadScenes();
   configLoader::loadKeys();
+  // and the screens. After the devices and scenes: a widget names a command,
+  // and a screen from a file replaces one compiled in.
+  configLoader::loadUi();
   #endif
 
   // Register the GUIs. They will be displayed in the order they have been registered.

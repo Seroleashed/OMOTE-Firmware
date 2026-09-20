@@ -7,6 +7,8 @@
 
 #include "omote_fakes.h"
 
+#include "applicationInternal/gui/uiRenderer.h"
+
 #include <cstdarg>
 #include <cstdio>
 #include <map>
@@ -330,5 +332,21 @@ std::map<char, repeatModes> key_repeatModes_default;
 std::map<char, uint16_t> key_commands_short_default;
 std::map<char, uint16_t> key_commands_long_default;
 t_gui_list main_gui_list;
+
+// ============================================================================
+// The ui renderer. configLoader registers screens from ui.json and hands the
+// drawing to it; in this environment there is no LVGL to draw with, and the
+// renderer has its own tests against a real headless one - see
+// env:native_test_ui. What the loader tests care about is that a screen was
+// registered, not what it looks like.
+// ============================================================================
+namespace uiRenderer {
+Result render(const configModel::Screen &screen, lv_obj_t *parent) {
+  (void)parent;
+  Result result;
+  result.widgetsDrawn = (uint16_t)screen.widgets.size();
+  return result;
+}
+} // namespace uiRenderer
 
 #endif // OMOTE_TEST_WITH_REAL_LVGL

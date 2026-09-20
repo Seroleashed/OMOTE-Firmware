@@ -135,4 +135,23 @@ struct KeysResult {
 
 KeysResult loadKeys();
 
+/*
+  Reads /cfg/ui.json and registers its screens.
+
+  A screen replaces one of the same name compiled into the firmware - which is
+  how gui_numpad becomes a file somebody can edit without a compiler.
+
+  Nothing is drawn here. The screens are registered and kept; LVGL objects are
+  only made when guiMemoryOptimizer decides that tab is due, which is what keeps
+  three tabs in memory instead of all of them.
+*/
+struct UiResult {
+  bool fileFound = false;
+  uint16_t screensLoaded = 0;
+  uint16_t screensReplaced = 0; // took the name of a screen written in C++
+  std::string error;
+};
+
+UiResult loadUi();
+
 } // namespace configLoader

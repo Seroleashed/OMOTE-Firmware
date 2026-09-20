@@ -15,12 +15,14 @@
 #include "applicationInternal/commandHandler.h"
 #include "applicationInternal/hardware/IRremoteProtocols.h"
 #include "applicationInternal/hardware/hardwarePresenter.h"
+#include "applicationInternal/gui/guiRegistry.h"
 #include "applicationInternal/keyNames.h"
 #include "applicationInternal/scenes/sceneRegistry.h"
 #include "applicationInternal/scenes/sequenceEngine.h"
 #include "applicationInternal/storage/configFile.h"
 #include "applicationInternal/storage/configLoader.h"
 #include "applicationInternal/storage/configStorage.h"
+#include "scenes/scene__default.h"
 #include "fake_filesystem.h"
 #include "omote_fakes.h"
 
@@ -43,6 +45,8 @@ void setUp(void) {
   fakes::clearKeypadMatrix();
   fileSystem.reset();
   registered_scenes.clear();
+  registered_guis_byName_map.clear();
+  main_gui_list.clear();
   sequenceEngine::abort();
   configStorage::setFileSystem(&fileSystem);
   bootGuard::begin(&bootStorage);
@@ -309,10 +313,90 @@ void test_a_broken_keys_file_leaves_the_layout_alone(void) {
   TEST_ASSERT_EQUAL_CHAR('?', matrix[3][3]);
 }
 
+// --- ui.json ------------------------------------------------------------------
+
+static const char *const ONE_SCREEN =
+    "{\"schemaVersion\":1,\"type\":\"omote.ui\",\"screens\":[{"
+    "\"name\":\"Numpad\",\"grid\":{\"columns\":3},"
+    "\"widgets\":[{\"type\":\"button\",\"row\":0,\"column\":0,\"label\":\"1\","
+    "\"command\":\"TV_POWER\"}]}]}";
+
+void test_a_screen_from_json_is_registered(void) {
+  fileSystem.files[configFile::PATH_UI] = ONE_SCREEN;
+
+  configLoader::UiResult result = configLoader::loadUi();
+
+  TEST_ASSERT_TRUE_MESSAGE(result.error.empty(), result.error.c_str());
+  TEST_ASSERT_EQUAL_UINT16(1, result.screensLoaded);
+  TEST_ASSERT_EQUAL_size_t(1, registered_guis_byName_map.count("Numpad"));
+}
+
+void test_a_screen_replaces_one_of_the_same_name(void) {
+  /*
+    How gui_numpad becomes a file somebody can edit without a compiler. The
+    registry used to refuse a repeated name outright, because for two screens
+    written in C++ it can only be a mistake.
+  */
+  register_gui("Numpad", NULL, NULL);
+  TEST_ASSERT_NULL(registered_guis_byName_map.at("Numpad").this_create_tab_content_named);
+
+  fileSystem.files[configFile::PATH_UI] = ONE_SCREEN;
+  configLoader::UiResult result = configLoader::loadUi();
+
+  TEST_ASSERT_EQUAL_UINT16(1, result.screensReplaced);
+  // and now it is the file that draws it
+  TEST_ASSERT_NOT_NULL(registered_guis_byName_map.at("Numpad").this_create_tab_content_named);
+}
+
+void test_a_replaced_screen_is_not_listed_twice(void) {
+  // paging through the screens would otherwise show the same one two times
+  size_t before = main_gui_list.size();
+  register_gui("Numpad", NULL, NULL);
+  TEST_ASSERT_EQUAL_size_t(before + 1, main_gui_list.size());
+
+  fileSystem.files[configFile::PATH_UI] = ONE_SCREEN;
+  configLoader::loadUi();
+
+  TEST_ASSERT_EQUAL_size_t(before + 1, main_gui_list.size());
+}
+
+void test_a_broken_ui_file_registers_nothing(void) {
+  fileSystem.files[configFile::PATH_UI] = "{ not json";
+
+  configLoader::UiResult result = configLoader::loadUi();
+
+  TEST_ASSERT_TRUE(result.fileFound);
+  TEST_ASSERT_EQUAL_UINT16(0, result.screensLoaded);
+  TEST_ASSERT_TRUE(result.error.size() > 0);
+}
+
+void test_safe_mode_skips_the_screens(void) {
+  class SafeMode : public BootCounterStorage {
+  public:
+    uint8_t readFailedBoots() override { return 0; }
+    void writeFailedBoots(uint8_t) override {}
+    bool readSafeModeRequested() override { return true; }
+    void writeSafeModeRequested(bool) override {}
+  };
+  static SafeMode safeMode;
+  bootGuard::begin(&safeMode);
+
+  fileSystem.files[configFile::PATH_UI] = ONE_SCREEN;
+  configLoader::UiResult result = configLoader::loadUi();
+
+  TEST_ASSERT_EQUAL_UINT16(0, result.screensLoaded);
+  bootGuard::begin(&bootStorage);
+}
+
 int main(int argc, char **argv) {
   (void)argc;
   (void)argv;
   UNITY_BEGIN();
+  RUN_TEST(test_a_screen_from_json_is_registered);
+  RUN_TEST(test_a_screen_replaces_one_of_the_same_name);
+  RUN_TEST(test_a_replaced_screen_is_not_listed_twice);
+  RUN_TEST(test_a_broken_ui_file_registers_nothing);
+  RUN_TEST(test_safe_mode_skips_the_screens);
   RUN_TEST(test_without_a_file_nothing_is_registered);
   RUN_TEST(test_a_scene_from_json_is_registered_with_its_keys);
   RUN_TEST(test_the_start_sequence_of_a_json_scene_actually_runs);

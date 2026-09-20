@@ -392,10 +392,84 @@ void test_rendering_the_same_screen_twice_does_not_pile_up(void) {
   TEST_ASSERT_EQUAL_UINT32(0, lv_obj_get_child_cnt(parent));
 }
 
+// --- the shipped numpad, against the hand written one ------------------------
+
+/*
+  defaults/ui.json describes the numpad that src/guis/gui_numpad.cpp draws in
+  C++. The plan asks for a screenshot comparison to prove they are the same;
+  pixels need a display, so what is proven here is the structure: the same
+  number of buttons, in the same cells, with the same captions.
+
+  That is weaker than a screenshot and stronger than nothing - it would catch a
+  digit in the wrong cell, a missing button, or the "0" drifting out of the
+  middle column, which are the mistakes actually worth catching. Whether the
+  corners are as round stays for the browser preview of step 21.
+*/
+static const char *const SHIPPED_NUMPAD =
+    "{\"schemaVersion\":1,\"type\":\"omote.ui\",\"screens\":[{"
+    "\"name\":\"Numpad\",\"grid\":{\"columns\":3,\"rowHeight\":52},\"widgets\":["
+    "{\"type\":\"button\",\"row\":0,\"column\":0,\"label\":\"1\",\"command\":\"TV_POWER\"},"
+    "{\"type\":\"button\",\"row\":0,\"column\":1,\"label\":\"2\",\"command\":\"TV_POWER\"},"
+    "{\"type\":\"button\",\"row\":0,\"column\":2,\"label\":\"3\",\"command\":\"TV_POWER\"},"
+    "{\"type\":\"button\",\"row\":1,\"column\":0,\"label\":\"4\",\"command\":\"TV_POWER\"},"
+    "{\"type\":\"button\",\"row\":1,\"column\":1,\"label\":\"5\",\"command\":\"TV_POWER\"},"
+    "{\"type\":\"button\",\"row\":1,\"column\":2,\"label\":\"6\",\"command\":\"TV_POWER\"},"
+    "{\"type\":\"button\",\"row\":2,\"column\":0,\"label\":\"7\",\"command\":\"TV_POWER\"},"
+    "{\"type\":\"button\",\"row\":2,\"column\":1,\"label\":\"8\",\"command\":\"TV_POWER\"},"
+    "{\"type\":\"button\",\"row\":2,\"column\":2,\"label\":\"9\",\"command\":\"TV_POWER\"},"
+    "{\"type\":\"spacer\",\"row\":3,\"column\":0},"
+    "{\"type\":\"button\",\"row\":3,\"column\":1,\"label\":\"0\",\"command\":\"TV_POWER\"},"
+    "{\"type\":\"spacer\",\"row\":3,\"column\":2}]}]}";
+
+void test_the_shipped_numpad_has_the_layout_of_the_hand_written_one(void) {
+  configModel::UiConfig config;
+  std::string error;
+  TEST_ASSERT_TRUE_MESSAGE(configModel::parseUi(SHIPPED_NUMPAD, config, error), error.c_str());
+
+  uiRenderer::Result result = uiRenderer::render(config.screens[0], parent);
+
+  // ten buttons and two spacers, exactly as gui_numpad.cpp: it walks i = 0..11
+  // and skips row 3 columns 0 and 2
+  TEST_ASSERT_EQUAL_UINT16(12, result.widgetsDrawn);
+  TEST_ASSERT_EQUAL_UINT16(0, result.widgetsDisabled);
+
+  int buttons = 0;
+  for (uint32_t i = 0; i < lv_obj_get_child_cnt(parent); i++) {
+    if (lv_obj_check_type(lv_obj_get_child(parent, i), &lv_btn_class)) buttons++;
+  }
+  TEST_ASSERT_EQUAL_INT(10, buttons);
+}
+
+void test_the_digits_sit_where_the_hand_written_numpad_puts_them(void) {
+  configModel::UiConfig config;
+  std::string error;
+  configModel::parseUi(SHIPPED_NUMPAD, config, error);
+  uiRenderer::render(config.screens[0], parent);
+
+  // 1 to 9 read left to right, top to bottom
+  for (int i = 0; i < 9; i++) {
+    lv_obj_t *drawn = lv_obj_get_child(parent, (uint32_t)i);
+    TEST_ASSERT_EQUAL_STRING(std::to_string(i + 1).c_str(),
+                             lv_label_get_text(lv_obj_get_child(drawn, 0)));
+    TEST_ASSERT_EQUAL_UINT32((uint32_t)(i / 3),
+                             lv_obj_get_style_grid_cell_row_pos(drawn, LV_PART_MAIN));
+    TEST_ASSERT_EQUAL_UINT32((uint32_t)(i % 3),
+                             lv_obj_get_style_grid_cell_column_pos(drawn, LV_PART_MAIN));
+  }
+
+  // and the zero alone in the middle of the fourth row
+  lv_obj_t *zero = lv_obj_get_child(parent, 10);
+  TEST_ASSERT_EQUAL_STRING("0", lv_label_get_text(lv_obj_get_child(zero, 0)));
+  TEST_ASSERT_EQUAL_UINT32(3, lv_obj_get_style_grid_cell_row_pos(zero, LV_PART_MAIN));
+  TEST_ASSERT_EQUAL_UINT32(1, lv_obj_get_style_grid_cell_column_pos(zero, LV_PART_MAIN));
+}
+
 int main(int argc, char **argv) {
   (void)argc;
   (void)argv;
   UNITY_BEGIN();
+  RUN_TEST(test_the_shipped_numpad_has_the_layout_of_the_hand_written_one);
+  RUN_TEST(test_the_digits_sit_where_the_hand_written_numpad_puts_them);
   RUN_TEST(test_an_empty_screen_draws_nothing_and_does_not_crash);
   RUN_TEST(test_every_widget_becomes_an_object);
   RUN_TEST(test_a_button_carries_its_caption);

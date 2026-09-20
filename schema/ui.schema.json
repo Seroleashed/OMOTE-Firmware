@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/KlausMu/OMOTE-Firmware/schema/ui.schema.json",
+  "title": "OMOTE screens",
+  "description": "Screens as data. Seven widget kinds and no conditionals, on purpose - see src/applicationInternal/storage/configUi.h.",
+  "type": "object",
+  "required": ["schemaVersion", "type", "screens"],
+  "properties": {
+    "schemaVersion": { "type": "integer", "minimum": 1, "maximum": 1 },
+    "type": { "const": "omote.ui" },
+    "screens": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "grid": {
+            "type": "object",
+            "properties": {
+              "columns": { "type": "integer", "minimum": 1, "maximum": 255 },
+              "rowHeight": { "type": "integer", "minimum": 1, "description": "Pixels, as in the hand written numpad." }
+            }
+          },
+          "widgets": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["type"],
+              "properties": {
+                "type": { "enum": ["button", "label", "slider", "arc", "list", "statusBar", "spacer"] },
+                "row": { "type": "integer", "minimum": 0, "maximum": 255 },
+                "column": { "type": "integer", "minimum": 0, "maximum": 255 },
+                "rowSpan": { "type": "integer", "minimum": 1, "maximum": 255 },
+                "columnSpan": { "type": "integer", "minimum": 1, "maximum": 255 },
+                "label": { "type": "string" },
+                "icon": { "type": "string", "description": "An LVGL symbol name. Wins over label when both are given." },
+                "command": { "type": "string", "description": "By name, never by id - ids shift as soon as a device is added." },
+                "payload": { "type": "string" },
+                "min": { "type": "integer" },
+                "max": { "type": "integer" },
+                "items": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "label": { "type": "string" },
+                      "command": { "type": "string" },
+                      "payload": { "type": "string" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

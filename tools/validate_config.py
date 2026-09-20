@@ -34,6 +34,7 @@ SCHEMA_BY_TYPE = {
     "omote.system": "system.schema.json",
     "omote.scenes": "scenes.schema.json",
     "omote.keys": "keys.schema.json",
+    "omote.ui": "ui.schema.json",
 }
 
 # where configuration files live when --all is used

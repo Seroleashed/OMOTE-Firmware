@@ -199,8 +199,15 @@ void create_new_tab(lv_obj_t* tabview, t_gui_on_tab *gui_on_tab) {
     gui_on_tab->GUIname = nameOfTab;
     // create tab and save pointer to tab in gui_on_tab
     gui_on_tab->tab = lv_tabview_add_tab(tabview, nameOfTab.c_str());
-    // let the gui create it's content
-    registered_guis_byName_map.at(nameOfTab).this_create_tab_content(gui_on_tab->tab);
+    // let the gui create it's content.
+    // A screen out of ui.json has no function of its own - it shares a builder
+    // that has to be told which screen to draw. Data first, same as the scenes.
+    const gui_definition &definition = registered_guis_byName_map.at(nameOfTab);
+    if (definition.this_create_tab_content_named != NULL) {
+      definition.this_create_tab_content_named(gui_on_tab->tab, nameOfTab);
+    } else if (definition.this_create_tab_content != NULL) {
+      definition.this_create_tab_content(gui_on_tab->tab);
+    }
   }
 }
 

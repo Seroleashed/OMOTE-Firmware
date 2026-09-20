@@ -24,12 +24,21 @@ void register_gui(
   gui_setKeys a_gui_setKeys,
   key_repeatModes a_key_repeatModes,
   key_commands_short a_key_commands_short,
-  key_commands_long a_key_commands_long
+  key_commands_long a_key_commands_long,
+  create_tab_content_named a_create_tab_content_named
   ) {
-  
-  if (registered_guis_byName_map.count(a_name) > 0) {
-    omote_log_e("ERROR!!!: you cannot register two guis having the same name '%s'\r\n", a_name.c_str());
-    return;
+
+  /*
+    A name registered twice used to be refused outright, because for two screens
+    written in C++ it can only be a mistake. Since step 16 it is also how a
+    screen from ui.json replaces the one compiled into the firmware - the same
+    rule devices and scenes already follow. It is still worth a warning: for the
+    C++ case it remains a mistake.
+  */
+  bool replacing = registered_guis_byName_map.count(a_name) > 0;
+  if (replacing) {
+    omote_log_w("gui: '%s' is registered again, the newer definition replaces the older one\r\n",
+                a_name.c_str());
   }
 
   gui_definition new_gui_definition = gui_definition{
@@ -39,15 +48,20 @@ void register_gui(
     a_gui_setKeys,
     a_key_repeatModes,
     a_key_commands_short,
-    a_key_commands_long
+    a_key_commands_long,
+    a_create_tab_content_named
   };
-  
+
   // put the gui_definition in a map that can be accessed by name
   registered_guis_byName_map[a_name] = new_gui_definition;
 
   // By default, put all registered guis in the sequence of guis to be shown of the default scene
   // Can be overwritten by scenes to have their own gui_list.
-  main_gui_list.insert(main_gui_list.end(), {std::string(a_name)});
+  // A replacement keeps the position it already had - appending again would
+  // show the same screen twice when paging through.
+  if (!replacing) {
+    main_gui_list.insert(main_gui_list.end(), {std::string(a_name)});
+  }
 
   setKeysForAllRegisteredGUIsAndScenes();
 

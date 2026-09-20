@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "type": "omote.ui",
+  "screens": [
+    {
+      "name": "Numpad",
+      "grid": { "columns": 3, "rowHeight": 52 },
+      "widgets": [
+        { "type": "button", "row": 0, "column": 0, "label": "1", "command": "SAMSUNG_NUM_1" },
+        { "type": "button", "row": 0, "column": 1, "label": "2", "command": "SAMSUNG_NUM_2" },
+        { "type": "button", "row": 0, "column": 2, "label": "3", "command": "SAMSUNG_NUM_3" },
+        { "type": "button", "row": 1, "column": 0, "label": "4", "command": "SAMSUNG_NUM_4" },
+        { "type": "button", "row": 1, "column": 1, "label": "5", "command": "SAMSUNG_NUM_5" },
+        { "type": "button", "row": 1, "column": 2, "label": "6", "command": "SAMSUNG_NUM_6" },
+        { "type": "button", "row": 2, "column": 0, "label": "7", "command": "SAMSUNG_NUM_7" },
+        { "type": "button", "row": 2, "column": 1, "label": "8", "command": "SAMSUNG_NUM_8" },
+        { "type": "button", "row": 2, "column": 2, "label": "9", "command": "SAMSUNG_NUM_9" },
+        { "type": "spacer", "row": 3, "column": 0 },
+        { "type": "button", "row": 3, "column": 1, "label": "0", "command": "SAMSUNG_NUM_0" },
+        { "type": "spacer", "row": 3, "column": 2 }
+      ]
+    }
+  ]
+}
