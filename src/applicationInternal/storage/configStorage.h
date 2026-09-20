@@ -63,6 +63,15 @@ ConfigFileSystem *fileSystem();
 */
 bool looksLikeEnvelope(const std::string &content);
 
+/*
+  The envelope carries a schema version, but a caller that moves a file around
+  without looking inside it - the transport of step 11 - has no business making
+  one up. It passes this instead, which says out loud that the payload declares
+  its own version. Nothing reads the envelope's version today; the parsers all
+  go by the "schemaVersion" field in the JSON.
+*/
+const uint16_t SCHEMA_VERSION_IN_PAYLOAD = 0;
+
 // name is a plain file name like "/cfg/system.json"
 bool save(const std::string &name, const std::string &payload, uint16_t schemaVersion);
 LoadedConfig load(const std::string &name);
