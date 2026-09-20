@@ -113,4 +113,14 @@ void reset();
 // true while a PUT is in progress
 bool isReceiving();
 
+/*
+  The far end said BYE, and whoever put this protocol on a shared stream should
+  hand the stream back.
+
+  The command lives here rather than in transportSession because this is where
+  the line splitting happens, and doing it in two places is how "BYE" in the
+  middle of a JSON file ends up closing a session. Clears itself when read.
+*/
+bool takeGoodbye();
+
 } // namespace configTransport

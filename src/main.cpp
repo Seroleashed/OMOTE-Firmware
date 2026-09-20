@@ -1,6 +1,9 @@
 // OMOTE firmware for ESP32
 // 2023-2025 Maximilian Kern, Klaus Musch
 
+#include <string>
+#include <vector>
+
 #include "applicationInternal/omote_log.h"
 // init hardware and hardware loop
 #include "applicationInternal/hardware/hardwarePresenter.h"
@@ -10,6 +13,9 @@
 #include "applicationInternal/credentials.h"
 #include "applicationInternal/storage/configStorage.h"
 #include "applicationInternal/storage/configLoader.h"
+#include "applicationInternal/storage/configScenes.h"
+#include "applicationInternal/transport/configTransport.h"
+#include "applicationInternal/transport/transportSession.h"
 // register devices and their commands
 //   special
 #include "devices/misc/device_specialCommands.h"
@@ -61,6 +67,37 @@
 #include "scenes/scene_appleTV.h"
 #include "applicationInternal/scenes/sceneHandler.h"
 #include "applicationInternal/scenes/sequenceEngine.h"
+
+/*
+  What the configuration transport is allowed to ask of the firmware.
+
+  APPLY deliberately does not re-register anything on the spot: commands that
+  are already registered would be replaced, but a gui or a scene holding an id
+  would keep pointing at the old one. Restarting is the honest answer, and it
+  takes under a second.
+*/
+static void applyConfigurationFromTransport() {
+  omote_log_i("transport: APPLY - restart the device to load the new configuration\r\n");
+}
+
+static void rebootFromTransport() {
+  #if defined(ARDUINO)
+  ESP.restart();
+  #else
+  omote_log_i("transport: REBOOT (the simulator stays where it is)\r\n");
+  #endif
+}
+
+static std::vector<std::string> transportInfoLines() {
+  std::vector<std::string> lines;
+  lines.push_back("version " + firmwareInfo::version());
+  lines.push_back("built " + firmwareInfo::buildDate());
+  lines.push_back("hardwareRev " + std::to_string(configModel::thisHardwareRevision()));
+  lines.push_back("config " + bootGuard::statusText());
+  lines.push_back("devicesLoaded " + std::to_string(configLoader::lastReport().devicesLoaded));
+  lines.push_back("filesFailed " + std::to_string(configLoader::lastReport().filesFailed));
+  return lines;
+}
 
 #if defined(ARDUINO)
 // in case of Arduino we have a setup() and a loop()
@@ -210,6 +247,18 @@ int main(int argc, char *argv[]) {
   init_mqtt();
   #endif
 
+  // A host can now move configuration files on and off the device. Set up last,
+  // so a session cannot start while half the firmware is still coming up - and
+  // so APPLY has something to re-read.
+  {
+    configTransport::Callbacks transportCallbacks;
+    transportCallbacks.apply = &applyConfigurationFromTransport;
+    transportCallbacks.reboot = &rebootFromTransport;
+    transportCallbacks.info = &transportInfoLines;
+    configTransport::begin(get_configFileSystem(), transportCallbacks);
+    transportSession::begin(get_transportByteStream());
+  }
+
   omote_log_i("Setup finished in %lu ms.\r\n", millis());
 
   // Everything came up: hardware, storage, gui, keypad and WiFi. That is the
@@ -249,6 +298,9 @@ void loop(unsigned long *pIMUTaskTimer, unsigned long *pUpdateStatusTimer) {
   #endif
   // keypad handling: get key states from hardware and process them
   keypad_loop();
+  // a host moving configuration files on or off the device, over the serial
+  // port or - in the simulator - a socket on localhost
+  transportSession::loop(millis());
   // step through a running scene sequence. Before the engine existed, the
   // scenes held this very loop with delay() while they switched devices on.
   sequenceEngine::loop(millis());

@@ -20,6 +20,7 @@ std::string outputBuffer;
 
 // --- state of a running PUT --------------------------------------------------
 bool receiving = false;
+bool goodbye = false;
 std::string receivePath;
 size_t receiveExpected = 0;
 uint32_t receiveCrc = 0;
@@ -123,9 +124,24 @@ void handleList() {
     // somebody to pull one and wonder why it is not the file they saved.
     if (paths[i].size() < 5 || paths[i].compare(paths[i].size() - 5, 5, ".json") != 0) continue;
 
-    std::string content;
-    if (!fs->read(paths[i], content)) continue;
-    lines.push_back(paths[i] + " " + std::to_string(content.size()));
+    /*
+      The size has to be the size of what GET would hand over, which is the
+      payload. Reporting the size of the file on disk instead would count the
+      storage envelope as well, and a host comparing what it sent with what the
+      device lists would find a mismatch for every file it ever wrote.
+    */
+    configStorage::LoadedConfig stored = configStorage::load(paths[i]);
+    size_t size = 0;
+    if (stored.usable()) {
+      size = stored.payload.size();
+    } else {
+      std::string content;
+      if (!fs->read(paths[i], content)) continue;
+      // a file without an envelope is its own payload
+      if (configStorage::looksLikeEnvelope(content)) continue; // damaged, GET would refuse it too
+      size = content.size();
+    }
+    lines.push_back(paths[i] + " " + std::to_string(size));
   }
 
   send("OK " + std::to_string(lines.size()));
@@ -304,6 +320,11 @@ void handleLine(const std::string &line) {
     // answer first: after the restart there is nobody left to answer with
     send("OK");
     if (callbacks.reboot != NULL) callbacks.reboot();
+  } else if (command == "BYE") {
+    // whoever owns the stream decides what to do with this; here it is just
+    // recorded, because this is the layer that knows where a line ends
+    goodbye = true;
+    send("OK");
   } else {
     sendError("unknown command: " + command);
   }
@@ -326,9 +347,16 @@ void reset() {
   receiveCrc = 0;
   receiveBuffer.clear();
   acknowledgedUpTo = 0;
+  goodbye = false;
 }
 
 bool isReceiving() { return receiving; }
+
+bool takeGoodbye() {
+  bool seen = goodbye;
+  goodbye = false;
+  return seen;
+}
 
 void feed(const std::string &bytes) {
   size_t position = 0;

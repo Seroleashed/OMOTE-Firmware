@@ -32,38 +32,53 @@ extern "C"
 
 #define OMOTE_LOG_FORMAT(letter, format) "[OMOTE " #letter "][%8lu]: " format , (unsigned long) millis()
 
+/*
+  Every log line goes through here rather than straight to Serial.
+
+  The serial port is shared: the log writes to it, and from step 12 the
+  configuration transport talks over it as well. A log line landing in the
+  middle of a file transfer would corrupt the file, so a transport session
+  silences the log for its duration with omote_log_setMuted().
+
+  The indirection is also where the ring buffer of step 26 will hook in - a
+  second sink is then one function rather than forty call sites.
+*/
+int omote_log_printf(const char *format, ...) __attribute__((format(printf, 1, 2)));
+void omote_log_setMuted(int muted);
+int omote_log_isMuted(void);
+
 #if OMOTE_LOG_LEVEL >= OMOTE_LOG_LEVEL_VERBOSE
-#define omote_log_v(format, ...) Serial.printf(OMOTE_LOG_FORMAT(V, format), ##__VA_ARGS__)
+#define omote_log_v(format, ...) omote_log_printf(OMOTE_LOG_FORMAT(V, format), ##__VA_ARGS__)
 #else
 #define omote_log_v(format, ...)  do {} while(0)
 #endif
 
 #if OMOTE_LOG_LEVEL >= OMOTE_LOG_LEVEL_DEBUG
-#define omote_log_d(format, ...) Serial.printf(OMOTE_LOG_FORMAT(D, format), ##__VA_ARGS__)
+#define omote_log_d(format, ...) omote_log_printf(OMOTE_LOG_FORMAT(D, format), ##__VA_ARGS__)
 #else
 #define omote_log_d(format, ...)  do {} while(0)
 #endif
 
 #if OMOTE_LOG_LEVEL >= OMOTE_LOG_LEVEL_INFO
-#define omote_log_i(format, ...) Serial.printf(OMOTE_LOG_FORMAT(I, format), ##__VA_ARGS__)
+#define omote_log_i(format, ...) omote_log_printf(OMOTE_LOG_FORMAT(I, format), ##__VA_ARGS__)
 #else
 #define omote_log_i(format, ...) do {} while(0)
 #endif
 
 #if OMOTE_LOG_LEVEL >= OMOTE_LOG_LEVEL_WARN
-#define omote_log_w(format, ...) Serial.printf(OMOTE_LOG_FORMAT(W, format), ##__VA_ARGS__)
+#define omote_log_w(format, ...) omote_log_printf(OMOTE_LOG_FORMAT(W, format), ##__VA_ARGS__)
 #else
 #define omote_log_w(format, ...) do {} while(0)
 #endif
 
 #if OMOTE_LOG_LEVEL >= OMOTE_LOG_LEVEL_ERROR
-#define omote_log_e(format, ...) Serial.printf(OMOTE_LOG_FORMAT(E, format), ##__VA_ARGS__)
+#define omote_log_e(format, ...) omote_log_printf(OMOTE_LOG_FORMAT(E, format), ##__VA_ARGS__)
 #else
 #define omote_log_e(format, ...) do {} while(0)
 #endif
 
 #if OMOTE_LOG_LEVEL >= OMOTE_LOG_LEVEL_NONE
-#define omote_log_n(format, ...) Serial.printf(OMOTE_LOG_FORMAT(E, format), ##__VA_ARGS__)
+#define omote_log_n(format, ...) omote_log_printf(OMOTE_LOG_FORMAT(E, format), ##__VA_ARGS__)
 #else
 #define omote_log_n(format, ...) do {} while(0)
 #endif

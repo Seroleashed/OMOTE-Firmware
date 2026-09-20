@@ -21,3 +21,6 @@ test/test_command_snapshot/commands.actual.txt
 
 # simulator runtime data: the local stand-in for the littlefs partition
 omote_data/
+
+# where omotectl pull writes by default
+cfg_backup/

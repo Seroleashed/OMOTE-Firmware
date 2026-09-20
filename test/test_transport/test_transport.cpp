@@ -76,6 +76,26 @@ void test_list_reports_every_file_with_its_size(void) {
   TEST_ASSERT_TRUE(contains(answer, "/cfg/devices/tv.json 8"));
 }
 
+void test_list_reports_the_size_get_would_hand_over(void) {
+  /*
+    A file written through configStorage carries an envelope on disk, but GET
+    hands over the payload. If LIST reported the size on disk, a host comparing
+    what it pushed with what the device lists would find a mismatch for every
+    single file - which is exactly what happened the first time this was tried
+    against the simulator.
+  */
+  std::string content = "{\"schemaVersion\":1,\"type\":\"omote.system\"}";
+  TEST_ASSERT_TRUE(configStorage::save("/cfg/system.json", content, 1));
+
+  std::string raw;
+  fileSystem.read("/cfg/system.json", raw);
+  TEST_ASSERT_TRUE_MESSAGE(raw.size() > content.size(), "the envelope should make the file bigger");
+
+  std::string answer = ask("LIST");
+  TEST_ASSERT_TRUE_MESSAGE(contains(answer, "/cfg/system.json " + std::to_string(content.size())),
+                           answer.c_str());
+}
+
 void test_list_hides_the_storage_bookkeeping_files(void) {
   // handing out a .bak invites somebody to pull one and wonder why it is not
   // the file they saved
@@ -343,6 +363,7 @@ int main(int argc, char **argv) {
   UNITY_BEGIN();
   RUN_TEST(test_list_of_an_empty_device_is_empty_not_an_error);
   RUN_TEST(test_list_reports_every_file_with_its_size);
+  RUN_TEST(test_list_reports_the_size_get_would_hand_over);
   RUN_TEST(test_list_hides_the_storage_bookkeeping_files);
   RUN_TEST(test_get_returns_length_crc_and_the_payload);
   RUN_TEST(test_get_hands_over_the_payload_without_the_envelope);
