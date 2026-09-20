@@ -67,13 +67,17 @@ report() {
 
 # --- unit tests --------------------------------------------------------------
 echo "== unit tests =="
-log="$LOG_DIR/native_test.log"
-set +e
-pio test -e native_test >"$log" 2>&1
-status=$?
-set -e
-summary=$(grep -oE '[0-9]+ test cases: [^=]*' "$log" | tail -1 || true)
-report "native_test" "$status" "$log" "$summary"
+# Two environments, because the ui renderer needs a real LVGL and everything
+# else needs the stub. See platformio.ini.
+for test_environment in native_test native_test_ui; do
+  log="$LOG_DIR/$test_environment.log"
+  set +e
+  pio test -e "$test_environment" >"$log" 2>&1
+  status=$?
+  set -e
+  summary=$(grep -oE '[0-9]+ test cases: [^=]*' "$log" | tail -1 || true)
+  report "$test_environment" "$status" "$log" "$summary"
+done
 
 if [ "$TESTS_ONLY" -eq 1 ]; then
   echo

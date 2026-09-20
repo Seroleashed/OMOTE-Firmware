@@ -1,3 +1,10 @@
+/*
+  Not compiled for env:native_test_ui. That environment builds against the real
+  LVGL rather than the test/lvgl.h stub, and it brings its own small set of
+  stand-ins - having both would mean two definitions of every one of them.
+*/
+#ifndef OMOTE_TEST_WITH_REAL_LVGL
+
 #include "omote_fakes.h"
 
 #include <cstdarg>
@@ -323,3 +330,5 @@ std::map<char, repeatModes> key_repeatModes_default;
 std::map<char, uint16_t> key_commands_short_default;
 std::map<char, uint16_t> key_commands_long_default;
 t_gui_list main_gui_list;
+
+#endif // OMOTE_TEST_WITH_REAL_LVGL
